@@ -43,6 +43,66 @@ db.exec(`
   );
 `);
 
+// 迁移: 移除 number_types.type_name 的 NOT NULL 约束
+// SQLite 不支持直接 DROP CONSTRAINT, 需要重建表
+function migrateNumberTypes() {
+  try {
+    // 检查是否已经迁移过: 如果旧表存在且新表不存在, 需要迁移
+    const tableInfo = db.prepare(`
+      SELECT sql FROM sqlite_master WHERE type='table' AND name='number_types'
+    `).get();
+
+    if (!tableInfo) return; // 表不存在, 等待 CREATE TABLE IF NOT EXISTS 处理
+
+    // 如果表已经迁移过 (type_name 没有 NOT NULL), 跳过
+    if (!tableInfo.sql.includes('type_name TEXT NOT NULL')) {
+      console.log('number_types table already migrated, skipping');
+      return;
+    }
+
+    console.log('Migrating number_types table to remove NOT NULL constraint on type_name...');
+
+    // 开始迁移: 重命名旧表
+    db.exec(`ALTER TABLE number_types RENAME TO number_types_old`);
+
+    // 创建新表 (移除 NOT NULL)
+    db.exec(`
+      CREATE TABLE number_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type_code TEXT UNIQUE NOT NULL,
+        type_name TEXT DEFAULT '',
+        description TEXT,
+        status TEXT DEFAULT 'approved' CHECK(status IN ('approved', 'pending', 'rejected')),
+        created_by TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        approved_at DATETIME
+      )
+    `);
+
+    // 复制数据
+    db.exec(`
+      INSERT INTO number_types (id, type_code, type_name, description, status, created_by, created_at, approved_at)
+      SELECT id, type_code, COALESCE(type_name, ''), description, status, created_by, created_at, approved_at
+      FROM number_types_old
+    `);
+
+    // 删除旧表
+    db.exec(`DROP TABLE number_types_old`);
+
+    console.log('number_types table migration completed');
+  } catch (err) {
+    console.error('Migration error:', err.message);
+    // 如果迁移失败 (例如表已经不存在), 尝试恢复
+    try {
+      db.exec(`DROP TABLE IF EXISTS number_types_old`);
+    } catch (e) {
+      // 忽略清理错误
+    }
+  }
+}
+
+migrateNumberTypes();
+
 // 创建申请记录表
 db.exec(`
   CREATE TABLE IF NOT EXISTS applications (

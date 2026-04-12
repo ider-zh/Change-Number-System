@@ -14,6 +14,9 @@ export function NumberTypesPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newType, setNewType] = useState({ type_code: '', type_name: '', description: '' });
   const [processing, setProcessing] = useState<number | null>(null);
+  const [editType, setEditType] = useState<NumberType | null>(null);
+  const [editForm, setEditForm] = useState({ type_code: '', type_name: '', description: '' });
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     if (localStorage.getItem('isAdmin') !== 'true') {
@@ -36,7 +39,7 @@ export function NumberTypesPage() {
   };
 
   const handleCreate = async () => {
-    if (!newType.type_code || !newType.type_name) return;
+    if (!newType.type_code.trim()) return;
     setProcessing(0);
     try {
       await numberTypeAPI.create(newType);
@@ -61,6 +64,37 @@ export function NumberTypesPage() {
     } finally {
       setProcessing(null);
     }
+  };
+
+  const handleEditClick = (nt: NumberType) => {
+    setEditType(nt);
+    setEditForm({ type_code: nt.type_code, type_name: nt.type_name || '', description: nt.description || '' });
+    setEditError('');
+  };
+
+  const handleEditSave = async () => {
+    if (!editType || !editForm.type_code.trim()) return;
+    setProcessing(editType.id);
+    setEditError('');
+    try {
+      await numberTypeAPI.update(editType.id, {
+        type_code: editForm.type_code,
+        type_name: editForm.type_name,
+        description: editForm.description,
+      });
+      setEditType(null);
+      loadNumberTypes();
+    } catch (err: unknown) {
+      setEditError(err instanceof Error ? err.message : '更新失败');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditType(null);
+    setEditForm({ type_code: '', type_name: '', description: '' });
+    setEditError('');
   };
 
   const getStatusBadge = (status: string) => {
@@ -107,17 +141,17 @@ export function NumberTypesPage() {
               <div className="border rounded-lg p-4 mb-4 space-y-3 bg-blue-50">
                 <div className="grid grid-cols-3 gap-3">
                   <Input
-                    placeholder="类型代码"
+                    placeholder="类型代码 *"
                     value={newType.type_code}
                     onChange={(e) => setNewType(prev => ({ ...prev, type_code: e.target.value }))}
                   />
                   <Input
-                    placeholder="类型名称"
+                    placeholder="类型名称 (可选)"
                     value={newType.type_name}
                     onChange={(e) => setNewType(prev => ({ ...prev, type_name: e.target.value }))}
                   />
                   <Input
-                    placeholder="描述"
+                    placeholder="描述 (可选)"
                     value={newType.description}
                     onChange={(e) => setNewType(prev => ({ ...prev, description: e.target.value }))}
                   />
@@ -125,6 +159,40 @@ export function NumberTypesPage() {
                 <Button onClick={handleCreate} loading={processing === 0}>
                   创建
                 </Button>
+              </div>
+            )}
+
+            {editType && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                  <h2 className="text-xl font-semibold mb-4">编辑编号类型</h2>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="类型代码 *"
+                      value={editForm.type_code}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, type_code: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="类型名称"
+                      value={editForm.type_name}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, type_name: e.target.value }))}
+                    />
+                    <Input
+                      placeholder="描述"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                    />
+                    {editError && <div className="text-red-600 text-sm">{editError}</div>}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button variant="outline" onClick={handleEditCancel}>
+                      取消
+                    </Button>
+                    <Button onClick={handleEditSave} loading={processing === editType.id}>
+                      保存
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -149,14 +217,23 @@ export function NumberTypesPage() {
                       <td className="p-4">{getStatusBadge(nt.status)}</td>
                       <td className="p-4 text-muted-foreground">{new Date(nt.created_at).toLocaleString('zh-CN')}</td>
                       <td className="p-4">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(nt.id)}
-                          loading={processing === nt.id}
-                        >
-                          删除
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(nt)}
+                          >
+                            编辑
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(nt.id)}
+                            loading={processing === nt.id}
+                          >
+                            删除
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

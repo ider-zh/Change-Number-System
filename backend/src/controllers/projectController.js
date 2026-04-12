@@ -75,8 +75,8 @@ function updateProject(req, res) {
       return errorResponse(res, 404, '项目不存在');
     }
 
-    const updateCode = code || project.code;
-    const updateName = name || project.name;
+    const updateCode = code !== undefined ? code : project.code;
+    const updateName = name !== undefined ? name : project.name;
     const updateStatus = status || project.status;
     const approvedAt = updateStatus === 'approved' && project.status !== 'approved' ? 'CURRENT_TIMESTAMP' : 'approved_at';
 
@@ -124,8 +124,8 @@ async function requestProject(req, res) {
     const { project_code, project_name, capToken } = req.body;
     const userId = req.body.applicant_name || 'anonymous';
 
-    if (!project_code || !project_name) {
-      return errorResponse(res, 400, '项目代号和名称不能为空');
+    if (!project_code) {
+      return errorResponse(res, 400, '项目代号不能为空');
     }
 
     // 人机验证（如果提供了 capToken）

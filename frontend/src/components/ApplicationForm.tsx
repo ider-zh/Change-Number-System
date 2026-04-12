@@ -136,8 +136,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
   }, []);
 
   const handleProjectRequest = async () => {
-    if (!newProject.project_code || !newProject.project_name) {
-      setError('请填写完整信息');
+    if (!newProject.project_code.trim()) {
+      setError('请填写项目代号');
       return;
     }
     setRequestLoading(true);
@@ -161,8 +161,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
   };
 
   const handleNumberTypeRequest = async () => {
-    if (!newNumberType.type_code || !newNumberType.type_name) {
-      setError('请填写完整信息');
+    if (!newNumberType.type_code.trim()) {
+      setError('请填写类型代码');
       return;
     }
     setRequestLoading(true);
@@ -357,12 +357,12 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
             {showProjectRequest ? (
               <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
                 <Input
-                  placeholder="项目代号"
+                  placeholder="项目代号 *"
                   value={newProject.project_code}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_code: e.target.value }))}
                 />
                 <Input
-                  placeholder="项目名称"
+                  placeholder="项目名称 (可选)"
                   value={newProject.project_name}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_name: e.target.value }))}
                 />
@@ -406,12 +406,12 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
             {showNumberTypeRequest ? (
               <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
                 <Input
-                  placeholder="类型代码"
+                  placeholder="类型代码 *"
                   value={newNumberType.type_code}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_code: e.target.value }))}
                 />
                 <Input
-                  placeholder="类型名称"
+                  placeholder="类型名称 (可选)"
                   value={newNumberType.type_name}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_name: e.target.value }))}
                 />

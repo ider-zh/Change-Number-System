@@ -39,14 +39,14 @@ function createNumberType(req, res) {
   try {
     const { type_code, type_name, description } = req.body;
 
-    if (!type_code || !type_name) {
-      return errorResponse(res, 400, '编号类型代码和名称不能为空');
+    if (!type_code) {
+      return errorResponse(res, 400, '编号类型代码不能为空');
     }
 
     const db = getDatabase();
     const result = db.prepare(
       'INSERT INTO number_types (type_code, type_name, description, status, approved_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)'
-    ).run(type_code, type_name, description || '', 'approved');
+    ).run(type_code, type_name || '', description || '', 'approved');
 
     const numberType = db.prepare('SELECT * FROM number_types WHERE id = ?').get(result.lastInsertRowid);
     return successResponse(res, numberType, '编号类型创建成功');
@@ -74,8 +74,8 @@ function updateNumberType(req, res) {
       return errorResponse(res, 404, '编号类型不存在');
     }
 
-    const updateCode = type_code || numberType.type_code;
-    const updateName = type_name || numberType.type_name;
+    const updateCode = type_code !== undefined ? type_code : numberType.type_code;
+    const updateName = type_name !== undefined ? type_name : numberType.type_name;
     const updateDesc = description !== undefined ? description : numberType.description;
     const updateStatus = status || numberType.status;
 
@@ -123,8 +123,8 @@ async function requestNumberType(req, res) {
     const { type_code, type_name, description, capToken } = req.body;
     const userId = req.body.applicant_name || 'anonymous';
 
-    if (!type_code || !type_name) {
-      return errorResponse(res, 400, '编号类型代码和名称不能为空');
+    if (!type_code) {
+      return errorResponse(res, 400, '编号类型代码不能为空');
     }
 
     // 人机验证（如果提供了 capToken）
@@ -142,7 +142,7 @@ async function requestNumberType(req, res) {
     try {
       db.prepare(
         'INSERT INTO number_types (type_code, type_name, description, status, created_by) VALUES (?, ?, ?, ?, ?)'
-      ).run(type_code, type_name, description || '', 'pending', userId);
+      ).run(type_code, type_name || '', description || '', 'pending', userId);
     } catch (err) {
       if (err.message && err.message.includes('UNIQUE constraint')) {
         return errorResponse(res, 409, '编号类型代码已存在');
