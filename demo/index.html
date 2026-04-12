@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>自动取号系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <aside class="hero-panel">
+      <p class="eyebrow">Number Hub</p>
+      <h1>自动取号系统</h1>
+      <p class="hero-copy">
+        统一管理 CR、DCP、CN 三类编号申请，自动生成规范编号，清晰查看申请人和历史记录。
+      </p>
+
+      <div class="hero-rules">
+        <h2>编号规则</h2>
+        <ul>
+          <li><strong>CR</strong>：CR-项目代号-4位流水号</li>
+          <li><strong>DCP</strong>：DCP-项目代号-4位流水号</li>
+          <li><strong>CN</strong>：CN-项目代号-4位流水号</li>
+        </ul>
+      </div>
+
+      <div class="role-card">
+        <span class="role-label">当前权限</span>
+        <div class="role-switcher">
+          <button class="role-btn" data-role="admin" type="button">管理员</button>
+          <button class="role-btn active" data-role="user" type="button">普通账号</button>
+        </div>
+        <p id="roleDescription" class="role-description">普通账号可以申请编号和查看记录，但不能导出历史表单。</p>
+
+        <form id="adminLoginForm" class="admin-login-form hidden">
+          <label>
+            <span>管理员用户名</span>
+            <input id="adminUsername" type="text" placeholder="请输入用户名">
+          </label>
+          <label>
+            <span>管理员密码</span>
+            <input id="adminPassword" type="password" placeholder="请输入密码">
+          </label>
+          <div class="admin-login-actions">
+            <button class="secondary-btn" type="submit">登录管理员</button>
+            <button class="ghost-btn" id="cancelAdminLoginBtn" type="button">取消</button>
+          </div>
+        </form>
+
+        <div id="adminSessionBar" class="admin-session hidden">
+          <span>管理员已登录</span>
+          <button id="logoutAdminBtn" class="ghost-btn" type="button">退出管理员</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content-panel">
+      <section class="card application-card">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Apply</p>
+            <h2>自动取号</h2>
+          </div>
+          <span class="status-pill">实时生成编号</span>
+        </div>
+
+        <form id="applicationForm" class="application-form">
+          <label>
+            <span>申请人</span>
+            <input id="applicantName" name="applicantName" type="text" placeholder="请输入申请人姓名" required>
+          </label>
+
+          <label>
+            <span>项目代号</span>
+            <input id="projectCode" name="projectCode" type="text" placeholder="例如 ALPHA01" maxlength="12" required>
+          </label>
+
+          <label>
+            <span>编号类型</span>
+            <select id="requestType" name="requestType" required>
+              <option value="CR">CR</option>
+              <option value="DCP">DCP</option>
+              <option value="CN">CN</option>
+            </select>
+          </label>
+
+          <div class="captcha-box">
+            <div>
+              <span class="captcha-label">提交验证</span>
+              <p class="captcha-question">请回答：<strong id="captchaQuestion"></strong></p>
+            </div>
+            <input id="captchaAnswer" name="captchaAnswer" type="text" inputmode="numeric" placeholder="输入答案" required>
+          </div>
+
+          <div class="form-actions">
+            <button class="primary-btn" type="submit">申请编号</button>
+            <button class="ghost-btn" id="resetFormBtn" type="button">重置</button>
+          </div>
+        </form>
+
+        <div id="resultCard" class="result-card hidden" aria-live="polite"></div>
+      </section>
+
+      <section class="card summary-card">
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">Overview</p>
+            <h2>已申请编号</h2>
+          </div>
+          <button id="exportBtn" class="secondary-btn" type="button">导出历史记录</button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <div class="table-toolbar">
+          <input id="searchInput" type="search" placeholder="搜索申请人、项目代号或编号">
+          <p id="permissionHint" class="permission-hint">管理员可导出全部申请记录。</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>申请时间</th>
+                <th>申请人</th>
+                <th>类型</th>
+                <th>项目代号</th>
+                <th>已申请编号</th>
+                <th id="actionHeader" class="hidden">操作</th>
+              </tr>
+            </thead>
+            <tbody id="recordsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination-bar">
+          <span id="paginationInfo" class="pagination-info"></span>
+          <div class="pagination-actions">
+            <button id="prevPageBtn" class="ghost-btn" type="button">上一页</button>
+            <span id="pageIndicator" class="page-indicator"></span>
+            <button id="nextPageBtn" class="ghost-btn" type="button">下一页</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

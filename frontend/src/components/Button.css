@@ -1,0 +1,53 @@
+.btn {
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #1890ff;
+  color: white;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-small {
+  padding: 4px 12px;
+  font-size: 12px;
+}
+
+.btn-medium {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.btn-large {
+  padding: 12px 24px;
+  font-size: 16px;
+}

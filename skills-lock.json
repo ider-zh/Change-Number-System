@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "skills": {
+    "agent-browser": {
+      "source": "vercel-labs/agent-browser",
+      "sourceType": "github",
+      "computedHash": "4cb1a0e62e703f441a65edf2d4a6c2d683f1427e90db1ba325f6f431d34f722e"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "fullstack-dev": {
+      "source": "minimax-ai/skills",
+      "sourceType": "github",
+      "computedHash": "e901a7302603fbc1c3f2a520feaaf8fead3c25dba8b77411f2f9593353b89959"
+    }
+  }
+}

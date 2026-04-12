@@ -1,0 +1,61 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Frontend
+frontend/node_modules
+frontend/dist
+
+# Backend
+backend/node_modules
+backend/data/*.db
+backend/data/*.db-wal
+backend/data/*.db-shm
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Tests
+tests/
+*.test.js
+*.spec.js
+coverage/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Logs
+logs
+*.log
+
+# Temporary files
+tmp/
+temp/
