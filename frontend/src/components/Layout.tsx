@@ -91,7 +91,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main className="flex-grow pt-16">
+      <main className="flex-grow">
         {children}
       </main>
 

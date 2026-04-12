@@ -286,94 +286,100 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>编号申请</CardTitle>
+    <Card className="border-none shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-primary/40 via-primary to-primary/40 w-full" />
+      <CardHeader className="pt-8 pb-4 text-center">
+        <CardTitle className="text-2xl font-bold text-slate-800">编号申请</CardTitle>
+        <p className="text-slate-500 text-sm mt-1">请填写以下信息以生成唯一项目编号</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-8 pb-10">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md mb-4">
+          <div className="bg-destructive/5 border border-destructive/10 text-destructive px-4 py-3 rounded-xl mb-6 text-sm flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
             {error}
           </div>
         )}
         {result && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-4 rounded-md mb-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <span className="text-sm font-medium">✓ 生成的编号:</span>
-                <span className="ml-2 font-bold text-lg">{result}</span>
+          <div className="bg-slate-900 border border-slate-800 text-white px-6 py-6 rounded-2xl mb-8 shadow-xl animate-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center gap-4">
+              <span className="text-slate-400 text-xs font-semibold tracking-wider uppercase">生成的唯一编号</span>
+              <div className="flex items-center gap-4">
+                <span className="text-3xl font-mono font-bold tracking-tight text-primary-foreground">{result}</span>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-10 w-10 p-0 rounded-full bg-white/10 hover:bg-white/20 border-white/5 transition-all active:scale-90"
+                  onClick={() => copyToClipboard(result)}
+                  title="点击复制"
+                >
+                  {copiedNumber === result ? (
+                    <Check className="h-4 w-4 text-green-400" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-white" />
+                  )}
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 shrink-0"
-                onClick={() => copyToClipboard(result)}
-                title="点击复制"
-              >
-                {copiedNumber === result ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+              {copiedNumber === result && (
+                <div className="text-xs text-green-400 font-medium">已复制到剪贴板</div>
+              )}
             </div>
-            {copiedNumber === result && (
-              <div className="text-xs text-green-600 mt-1">已复制到剪贴板</div>
-            )}
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              申请人姓名 *
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2.5">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+              申请人姓名 <span className="text-destructive">*</span>
             </label>
             <Input
               value={formData.applicant_name}
               onChange={(e) => setFormData(prev => ({ ...prev, applicant_name: e.target.value }))}
-              placeholder="请输入申请人姓名"
+              placeholder="请输入您的真实姓名"
               required
+              className="h-12 bg-slate-50/50 border-slate-200 focus:bg-white transition-all rounded-xl"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-medium leading-none">
-                项目代号 *
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                项目代号 <span className="text-destructive">*</span>
               </label>
               {(featureToggles.allow_request_project || isAdmin) && (
                 <Button
                   type="button"
                   variant="link"
                   size="sm"
-                  className="h-auto p-0 text-xs"
+                  className="h-auto p-0 text-xs text-primary/80 hover:text-primary"
                   onClick={() => setShowProjectRequest(!showProjectRequest)}
                 >
-                  {showProjectRequest ? '取消申请' : '申请新项目'}
+                  {showProjectRequest ? '返回列表' : '+ 申请新项目'}
                 </Button>
               )}
             </div>
             {showProjectRequest ? (
-              <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <div className="space-y-3 p-4 bg-orange-50/50 border border-orange-100 rounded-2xl animate-in fade-in slide-in-from-right-2">
                 <Input
-                  placeholder="项目代号 *"
+                  placeholder="新项目代号 (如: PROJ-X) *"
                   value={newProject.project_code}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_code: e.target.value }))}
+                  className="h-10 border-orange-200 focus:border-orange-400 bg-white"
                 />
                 <Input
-                  placeholder="项目名称 (可选)"
+                  placeholder="项目全称 (可选)"
                   value={newProject.project_name}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_name: e.target.value }))}
+                  className="h-10 border-orange-200 focus:border-orange-400 bg-white"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white border-none h-10"
                   loading={requestLoading}
                   onClick={() => handleProjectRequest()}
                 >
-                  提交申请
+                  提交项目申请
                 </Button>
               </div>
             ) : (
@@ -381,53 +387,56 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
                 projects={projects}
                 value={formData.project_code}
                 onChange={(code) => setFormData(prev => ({ ...prev, project_code: code }))}
-                placeholder="请选择项目"
+                placeholder="请搜索或选择项目"
               />
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-medium leading-none">
-                编号类型 *
+              <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                编号类型 <span className="text-destructive">*</span>
               </label>
               {(featureToggles.allow_request_number_type || isAdmin) && (
                 <Button
                   type="button"
                   variant="link"
                   size="sm"
-                  className="h-auto p-0 text-xs"
+                  className="h-auto p-0 text-xs text-primary/80 hover:text-primary"
                   onClick={() => setShowNumberTypeRequest(!showNumberTypeRequest)}
                 >
-                  {showNumberTypeRequest ? '取消申请' : '申请新编号类型'}
+                  {showNumberTypeRequest ? '返回列表' : '+ 申请新类型'}
                 </Button>
               )}
             </div>
             {showNumberTypeRequest ? (
-              <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <div className="space-y-3 p-4 bg-orange-50/50 border border-orange-100 rounded-2xl animate-in fade-in slide-in-from-right-2">
                 <Input
-                  placeholder="类型代码 *"
+                  placeholder="类型代码 (如: DOC) *"
                   value={newNumberType.type_code}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_code: e.target.value }))}
+                  className="h-10 border-orange-200 focus:border-orange-400 bg-white"
                 />
                 <Input
-                  placeholder="类型名称 (可选)"
+                  placeholder="类型名称 (如: 文档) *"
                   value={newNumberType.type_name}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_name: e.target.value }))}
+                  className="h-10 border-orange-200 focus:border-orange-400 bg-white"
                 />
                 <Input
-                  placeholder="描述 (可选)"
+                  placeholder="用途描述 (可选)"
                   value={newNumberType.description}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, description: e.target.value }))}
+                  className="h-10 border-orange-200 focus:border-orange-400 bg-white"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white border-none h-10"
                   loading={requestLoading}
                   onClick={() => handleNumberTypeRequest()}
                 >
-                  提交申请
+                  提交类型申请
                 </Button>
               </div>
             ) : (
@@ -435,13 +444,18 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
                 value={formData.number_type}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, number_type: value }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="请选择编号类型" />
+                <SelectTrigger className="h-12 bg-slate-50/50 border-slate-200 rounded-xl focus:ring-primary/20">
+                  <SelectValue placeholder="请选择编号用途类型" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl shadow-xl border-slate-100">
                   {numberTypes.map(nt => (
-                    <SelectItem key={nt.id} value={nt.type_code}>
-                      {nt.type_code} - {nt.type_name} {nt.status === 'pending' ? '(待审核)' : ''}
+                    <SelectItem key={nt.id} value={nt.type_code} className="py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-700">{nt.type_code}</span>
+                        <span className="text-slate-400">|</span>
+                        <span className="text-slate-600">{nt.type_name}</span>
+                        {nt.status === 'pending' && <Badge variant="outline" className="ml-1 text-[10px] h-4 px-1 border-orange-200 text-orange-600 bg-orange-50">审核中</Badge>}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -449,26 +463,38 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
             )}
           </div>
 
-          {/* 人机验证 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">人机验证 *</label>
-            <CapVerification
-              key={captchaKey}
-              endpoint="/cap/"
-              onSolve={(token) => {
-                setCapToken(token);
-                setError(null);
-              }}
-              onReset={handleCaptchaReset}
-              onError={(msg) => {
-                setCapToken(null);
-                setError(msg);
-              }}
-            />
+          <div className="space-y-3 pt-2">
+            <label className="text-sm font-semibold text-slate-700">安全验证 <span className="text-destructive">*</span></label>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-dashed border-slate-200">
+              <CapVerification
+                key={captchaKey}
+                endpoint="/cap/"
+                onSolve={(token) => {
+                  setCapToken(token);
+                  setError(null);
+                }}
+                onReset={handleCaptchaReset}
+                onError={(msg) => {
+                  setCapToken(null);
+                  setError(msg);
+                }}
+              />
+            </div>
           </div>
 
-          <Button type="submit" loading={loading} size="lg" className="w-full" disabled={isCoolingDown || loading || !capToken}>
-            {isCoolingDown ? `请等待 ${cooldownSeconds}s 后可再次取号` : '提交申请'}
+          <Button 
+            type="submit" 
+            loading={loading} 
+            size="lg" 
+            className="w-full h-14 rounded-2xl text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:grayscale disabled:opacity-50" 
+            disabled={isCoolingDown || loading || !capToken}
+          >
+            {isCoolingDown ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                等待中 ({cooldownSeconds}s)
+              </span>
+            ) : '立即获取编号'}
           </Button>
         </form>
       </CardContent>

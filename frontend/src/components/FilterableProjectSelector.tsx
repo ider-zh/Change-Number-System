@@ -108,92 +108,104 @@ export function FilterableProjectSelector({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background',
-          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'flex h-12 w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm ring-offset-background transition-all',
+          'hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:bg-white',
           'disabled:cursor-not-allowed disabled:opacity-50',
-          !value && 'text-muted-foreground'
+          !value && 'text-slate-400'
         )}
       >
-        <span className="truncate">
+        <span className="truncate font-medium">
           {selectedProject ? (
             <span className="flex items-center gap-2">
-              {selectedProject.code} - {selectedProject.name}
+              <span className="text-slate-900">{selectedProject.code}</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-slate-600 truncate">{selectedProject.name}</span>
               {statusBadge(selectedProject.status)}
             </span>
           ) : (
             placeholder
           )}
         </span>
-        <ChevronDown className={cn('h-4 w-4 opacity-50 transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown className={cn('h-4 w-4 opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
       </button>
 
       {/* 下拉面板 */}
       {isOpen && (
         <>
           {/* 遮罩 */}
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute z-50 mt-1 w-full max-h-80 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+          <div className="fixed inset-0 z-40 bg-black/5 backdrop-blur-[1px]" onClick={() => setIsOpen(false)} />
+          <div className="absolute z-50 mt-2 w-full max-h-[400px] overflow-hidden rounded-2xl border border-slate-100 bg-white text-popover-foreground shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
             {/* 搜索框 */}
-            <div className="p-2 border-b">
+            <div className="p-3 border-b border-slate-50 bg-slate-50/30">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="text"
                   placeholder="搜索项目代号或名称..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-8 pl-8 pr-2 text-sm rounded-md border border-input bg-background px-2"
+                  className="w-full h-10 pl-10 pr-4 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all"
                   autoFocus
                 />
               </div>
             </div>
 
-            {/* 状态筛选 */}
-            <div className="flex items-center gap-1 p-2 border-b overflow-x-auto">
-              <Filter className="h-3 w-3 text-muted-foreground shrink-0" />
-              {(['all', 'approved', 'pending', 'rejected'] as StatusFilter[]).map((status) => (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 border-b border-slate-50 bg-white">
+              {/* 状态筛选 */}
+              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                {(['all', 'approved', 'pending', 'rejected'] as StatusFilter[]).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setStatusFilter(status)}
+                    className={cn(
+                      'px-2.5 py-1 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                      statusFilter === status
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                    )}
+                  >
+                    {status === 'all' ? '全部' : status === 'approved' ? '已通过' : status === 'pending' ? '待审核' : '已拒绝'}
+                  </button>
+                ))}
+              </div>
+
+              {/* 排序按钮 */}
+              <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 px-1">
+                <span className="hidden xs:inline">排序:</span>
                 <button
-                  key={status}
                   type="button"
-                  onClick={() => setStatusFilter(status)}
+                  onClick={() => handleSortFieldChange('created_at')}
                   className={cn(
-                    'px-2 py-0.5 text-xs rounded-md whitespace-nowrap transition-colors',
-                    statusFilter === status
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-muted/80'
+                    "flex items-center gap-1 transition-colors hover:text-slate-900",
+                    sortField === 'created_at' && "text-slate-900 font-bold"
                   )}
                 >
-                  {status === 'all' ? '全部' : status === 'approved' ? '已通过' : status === 'pending' ? '待审核' : '已拒绝'}
+                  {getSortIcon('created_at')}
+                  时间
                 </button>
-              ))}
-            </div>
-
-            {/* 排序按钮 */}
-            <div className="flex items-center gap-2 p-2 border-b text-xs text-muted-foreground">
-              <span>排序:</span>
-              <button
-                type="button"
-                onClick={() => handleSortFieldChange('created_at')}
-                className="flex items-center gap-1 hover:text-foreground"
-              >
-                {getSortIcon('created_at')}
-                时间
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSortFieldChange('code')}
-                className="flex items-center gap-1 hover:text-foreground"
-              >
-                {getSortIcon('code')}
-                代号
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleSortFieldChange('code')}
+                  className={cn(
+                    "flex items-center gap-1 transition-colors hover:text-slate-900",
+                    sortField === 'code' && "text-slate-900 font-bold"
+                  )}
+                >
+                  {getSortIcon('code')}
+                  代号
+                </button>
+              </div>
             </div>
 
             {/* 项目列表 */}
-            <div className="overflow-y-auto max-h-48 p-1">
+            <div className="overflow-y-auto max-h-60 p-2 space-y-1">
               {filteredProjects.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  没有找到匹配的项目
+                <div className="py-10 text-center flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center">
+                    <Filter className="h-5 w-5 text-slate-300" />
+                  </div>
+                  <span className="text-sm text-slate-400">没有找到匹配的项目</span>
                 </div>
               ) : (
                 filteredProjects.map((project) => (
@@ -205,16 +217,24 @@ export function FilterableProjectSelector({
                       setIsOpen(false);
                     }}
                     className={cn(
-                      'relative flex w-full cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none',
-                      'hover:bg-accent hover:text-accent-foreground',
-                      value === project.code && 'bg-accent text-accent-foreground'
+                      'relative flex w-full cursor-pointer select-none items-center rounded-xl px-3 py-3 text-sm outline-none transition-all group',
+                      'hover:bg-slate-50',
+                      value === project.code ? 'bg-primary/5 text-primary' : 'text-slate-700'
                     )}
                   >
-                    <span className="flex-1 text-left">
-                      <span className="font-medium">{project.code}</span>
-                      <span className="text-muted-foreground ml-2">{project.name}</span>
-                    </span>
-                    {statusBadge(project.status)}
+                    <div className="flex-1 flex flex-col items-start overflow-hidden">
+                      <div className="flex items-center gap-2 w-full">
+                        <span className={cn(
+                          "font-bold tracking-tight",
+                          value === project.code ? "text-primary" : "text-slate-900"
+                        )}>{project.code}</span>
+                        {statusBadge(project.status)}
+                      </div>
+                      <span className="text-xs text-slate-500 truncate w-full mt-0.5">{project.name}</span>
+                    </div>
+                    {value === project.code && (
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+                    )}
                   </button>
                 ))
               )}
