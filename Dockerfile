@@ -49,6 +49,10 @@ COPY backend/ ./
 # Copy frontend build output from the frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist ./public
 
+# Copy lifecycle scripts
+COPY scripts/lifecycle/ ./scripts/lifecycle/
+RUN chmod +x ./scripts/lifecycle/*.sh
+
 # Create data directory for SQLite
 RUN mkdir -p /app/data && chown -R appuser:appgroup /app
 
