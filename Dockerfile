@@ -25,7 +25,7 @@ FROM node:20-alpine AS production
 # Add labels for the image
 LABEL org.opencontainers.image.title="Change-Number-System"
 LABEL org.opencontainers.image.description="Auto number system with SQLite backend"
-LABEL org.opencontainers.image.source="https://github.com/your-org/Change-Number-System"
+LABEL org.opencontainers.image.source="https://github.com/ider-zh/Change-Number-System"
 
 # Set working directory
 WORKDIR /app
