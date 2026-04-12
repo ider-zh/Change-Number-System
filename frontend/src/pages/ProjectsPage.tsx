@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI } from '../services';
+import type { Project } from '../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -8,7 +9,7 @@ import { Input } from '../components/ui/input';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newProject, setNewProject] = useState({ code: '', name: '' });
@@ -26,7 +27,7 @@ export function ProjectsPage() {
     setLoading(true);
     try {
       const res = await projectAPI.getAll();
-      setProjects((res as any).data || []);
+      setProjects((res as { data: Project[] }).data || []);
     } catch (err) {
       console.error('加载失败', err);
     } finally {
@@ -42,7 +43,7 @@ export function ProjectsPage() {
       setNewProject({ code: '', name: '' });
       setShowCreateForm(false);
       loadProjects();
-    } catch (err: any) {
+    } catch (err: Error) {
       alert(err.message || '创建失败');
     } finally {
       setProcessing(null);

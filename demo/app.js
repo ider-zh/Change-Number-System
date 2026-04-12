@@ -39,7 +39,8 @@ const roleDescriptions = {
 const typeStyles = {
   CR: "CR 类",
   DCP: "DCP 类",
-  CN: "CN 类"
+  CN: "CN 类",
+  TD: "TD 类"
 };
 
 const state = {

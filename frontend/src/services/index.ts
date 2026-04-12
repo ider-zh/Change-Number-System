@@ -66,9 +66,9 @@ export const numberTypeAPI = {
 };
 
 export const applicationAPI = {
-  create: (data: { applicant_name: string; project_code: string; number_type: string }) => 
+  create: (data: { applicant_name: string; project_code: string; number_type: string }) =>
     api.post('/applications', data),
-  getAll: (params: any) => api.get('/applications', { params }),
+  getAll: (params: { page?: number; limit?: number; keyword?: string; project_code?: string; number_type?: string; start_date?: string; end_date?: string; applicant_name?: string; ip_address?: string }) => api.get('/applications', { params }),
   getStats: () => api.get('/applications/stats'),
   delete: (id: number) => api.delete(`/applications/${id}`),
   batchDelete: (ids: number[]) => api.delete('/applications', { data: { ids } }),

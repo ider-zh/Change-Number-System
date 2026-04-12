@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, type ReactNode } from 'react';
+import type { Project, NumberType, Application } from '../services';
 
 interface UserInfo {
   name: string;
@@ -7,19 +8,19 @@ interface UserInfo {
 
 interface AppState {
   user: UserInfo | null;
-  projects: any[];
-  numberTypes: any[];
-  applications: any[];
+  projects: Project[];
+  numberTypes: NumberType[];
+  applications: Application[];
   isAdmin: boolean;
   loading: boolean;
   error: string | null;
 }
 
-type AppAction = 
+type AppAction =
   | { type: 'SET_USER'; payload: UserInfo | null }
-  | { type: 'SET_PROJECTS'; payload: any[] }
-  | { type: 'SET_NUMBER_TYPES'; payload: any[] }
-  | { type: 'SET_APPLICATIONS'; payload: any[] }
+  | { type: 'SET_PROJECTS'; payload: Project[] }
+  | { type: 'SET_NUMBER_TYPES'; payload: NumberType[] }
+  | { type: 'SET_APPLICATIONS'; payload: Application[] }
   | { type: 'SET_ADMIN'; payload: boolean }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
@@ -70,6 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppContext() {
   const context = useContext(AppContext);
   if (!context) {

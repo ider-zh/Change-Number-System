@@ -1,20 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { applicationAPI, projectAPI, numberTypeAPI } from '../services';
+import type { Project, NumberType } from '../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { settingsAPI } from '../services';
 
+interface StatsData {
+  total: number;
+  byType?: Array<{ number_type: string; count: number }>;
+}
+
+interface FeatureToggles {
+  allow_request_project: boolean;
+  allow_request_number_type: boolean;
+}
+
 export function AdminDashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [pendingProjects, setPendingProjects] = useState(0);
   const [pendingNumberTypes, setPendingNumberTypes] = useState(0);
   const [loading, setLoading] = useState(true);
-  
+
   // 功能开关状态
-  const [featureToggles, setFeatureToggles] = useState({
+  const [featureToggles, setFeatureToggles] = useState<FeatureToggles>({
     allow_request_project: false,
     allow_request_number_type: false
   });
@@ -43,11 +54,14 @@ export function AdminDashboard() {
           settingsAPI.getFeatureToggles(),
           settingsAPI.getCooldown(),
         ]);
-        setStats((statsRes as any).data || null);
-        setPendingProjects(((projectsRes as any).data || []).length);
-        setPendingNumberTypes(((numberTypesRes as any).data || []).length);
-        setFeatureToggles((togglesRes as any).data || featureToggles);
-        setCooldownSeconds((cooldownRes as any).data?.cooldown_seconds || 10);
+        setStats((statsRes as { data: StatsData }).data || null);
+        setPendingProjects(((projectsRes as { data: Project[] }).data || []).length);
+        setPendingNumberTypes(((numberTypesRes as { data: NumberType[] }).data || []).length);
+        const togglesData = (togglesRes as { data: FeatureToggles }).data;
+        if (togglesData) {
+          setFeatureToggles(togglesData);
+        }
+        setCooldownSeconds((cooldownRes as { data: { cooldown_seconds: number } }).data?.cooldown_seconds || 10);
       } catch (err) {
         console.error('加载数据失败', err);
       } finally {
@@ -66,20 +80,20 @@ export function AdminDashboard() {
   // 处理功能开关变更
   const handleToggleChange = async (key: string, value: boolean) => {
     if (updatingToggle) return; // 防止并发更新
-    
+
     try {
       setUpdatingToggle(key);
       const response = await settingsAPI.updateFeatureToggles({
         [key]: value
       });
-      
-      if ((response as any).success) {
-        setFeatureToggles((response as any).data);
+
+      if ((response as { success: boolean }).success) {
+        setFeatureToggles((response as { data: FeatureToggles }).data);
         setNotification({ message: '功能开关已更新', type: 'success' });
       } else {
         setNotification({ message: '更新失败，请重试', type: 'error' });
       }
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error(`更新开关 ${key} 失败:`, error);
       setNotification({ message: error.message || '更新失败，请重试', type: 'error' });
     } finally {
@@ -90,20 +104,20 @@ export function AdminDashboard() {
   // 处理冷却时间变更
   const handleCooldownChange = async (value: number) => {
     if (updatingCooldown || value < 5 || value > 60) return;
-    
+
     try {
       setUpdatingCooldown(true);
       const response = await settingsAPI.updateCooldown({
         cooldown_seconds: value
       });
-      
-      if ((response as any).success) {
-        setCooldownSeconds((response as any).data.cooldown_seconds);
+
+      if ((response as { success: boolean }).success) {
+        setCooldownSeconds((response as { data: { cooldown_seconds: number } }).data.cooldown_seconds);
         setNotification({ message: '冷却时间已更新', type: 'success' });
       } else {
         setNotification({ message: '更新失败，请重试', type: 'error' });
       }
-    } catch (error: any) {
+    } catch (error: Error) {
       console.error('更新冷却时间失败:', error);
       setNotification({ message: error.message || '更新失败，请重试', type: 'error' });
     } finally {
@@ -241,7 +255,7 @@ export function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {stats.byType.map((item: any) => (
+                {stats.byType.map((item: { number_type: string; count: number }) => (
                   <div key={item.number_type} className="bg-blue-50 p-4 rounded-lg text-center">
                     <div className="text-sm text-muted-foreground mb-1">{item.number_type}</div>
                     <div className="text-2xl font-bold text-blue-600">{item.count}</div>

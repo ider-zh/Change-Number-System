@@ -145,6 +145,7 @@ const insertPresets = db.transaction(() => {
   insertNumberType.run('CR', 'Change Request');
   insertNumberType.run('DCP', 'Design Change Proposal');
   insertNumberType.run('CN', 'Change Notice');
+  insertNumberType.run('TD', 'Technical Document');
 
   // 插入默认功能开关（默认关闭）
   const insertSetting = db.prepare(`

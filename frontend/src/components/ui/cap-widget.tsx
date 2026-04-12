@@ -11,16 +11,32 @@ import {
 
 import type React from "react";
 
+/* eslint-disable @typescript-eslint/no-namespace */
+// Extend React JSX types for cap-widget element
+type CapWidgetElement = React.DetailedHTMLProps<
+  React.HTMLAttributes<HTMLElement>,
+  HTMLElement
+> & {
+  "data-cap-api-endpoint"?: string;
+  "data-cap-worker-count"?: number;
+  "data-cap-i18n-verifying-label"?: string;
+  "data-cap-i18n-initial-state"?: string;
+  "data-cap-i18n-solved-label"?: string;
+  "data-cap-i18n-error-label"?: string;
+  "data-cap-i18n-verify-aria-label"?: string;
+  "data-cap-i18n-verifying-aria-label"?: string;
+  "data-cap-i18n-verified-aria-label"?: string;
+  "data-cap-i18n-error-aria-label"?: string;
+};
+
 declare module "react" {
   namespace JSX {
     interface IntrinsicElements {
-      "cap-widget": React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement>,
-        HTMLElement
-      >;
+      "cap-widget": CapWidgetElement;
     }
   }
 }
+/* eslint-enable @typescript-eslint/no-namespace */
 
 declare global {
   interface Window {
@@ -124,7 +140,7 @@ const CapWidget = forwardRef<HTMLDivElement, CapWidgetProps>(
           window.CAP_CUSTOM_FETCH = customFetch;
         }
 
-        // @ts-ignore
+        // @ts-expect-error cap.js widget import
         await import("@cap.js/widget");
 
         if (mounted) {

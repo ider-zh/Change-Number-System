@@ -18,14 +18,14 @@ export function AdminLogin() {
     setError('');
 
     try {
-      const response = await adminAPI.login({ username, password }) as any;
-      const { token } = response.data;
+      const response = await adminAPI.login({ username, password });
+      const { token } = (response as { data: { token: string } }).data;
       
       localStorage.setItem('adminToken', token);
       localStorage.setItem('isAdmin', 'true');
       
       navigate('/admin/dashboard');
-    } catch (err: any) {
+    } catch (err: Error) {
       setError(err.message || '登录失败');
     } finally {
       setLoading(false);

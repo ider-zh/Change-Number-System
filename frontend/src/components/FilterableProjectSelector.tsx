@@ -85,7 +85,7 @@ export function FilterableProjectSelector({
     }
   };
 
-  const SortIcon = ({ field }: { field: SortField }) => {
+  const getSortIcon = (field: SortField) => {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
     return sortOrder === 'asc' ? (
       <ArrowUp className="h-3 w-3 text-primary" />
@@ -176,7 +176,7 @@ export function FilterableProjectSelector({
                 onClick={() => handleSortFieldChange('created_at')}
                 className="flex items-center gap-1 hover:text-foreground"
               >
-                <SortIcon field="created_at" />
+                {getSortIcon('created_at')}
                 时间
               </button>
               <button
@@ -184,7 +184,7 @@ export function FilterableProjectSelector({
                 onClick={() => handleSortFieldChange('code')}
                 className="flex items-center gap-1 hover:text-foreground"
               >
-                <SortIcon field="code" />
+                {getSortIcon('code')}
                 代号
               </button>
             </div>

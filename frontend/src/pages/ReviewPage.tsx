@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectAPI, numberTypeAPI } from '../services';
+import type { Project, NumberType } from '../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -9,8 +10,8 @@ import { Input } from '../components/ui/input';
 export function ReviewPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'projects' | 'numberTypes'>('projects');
-  const [pendingProjects, setPendingProjects] = useState<any[]>([]);
-  const [pendingNumberTypes, setPendingNumberTypes] = useState<any[]>([]);
+  const [pendingProjects, setPendingProjects] = useState<Project[]>([]);
+  const [pendingNumberTypes, setPendingNumberTypes] = useState<NumberType[]>([]);
   const [reviewNotes, setReviewNotes] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<number | null>(null);
@@ -31,8 +32,8 @@ export function ReviewPage() {
         projectAPI.getPending(),
         numberTypeAPI.getPending(),
       ]);
-      setPendingProjects((projectsRes as any).data || []);
-      setPendingNumberTypes((numberTypesRes as any).data || []);
+      setPendingProjects((projectsRes as { data: Project[] }).data || []);
+      setPendingNumberTypes((numberTypesRes as { data: NumberType[] }).data || []);
     } catch (err) {
       console.error('加载数据失败', err);
     } finally {

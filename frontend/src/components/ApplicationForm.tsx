@@ -8,6 +8,28 @@ import { FilterableProjectSelector } from './FilterableProjectSelector';
 import { CapVerification } from './CapVerification';
 import { Copy, Check } from 'lucide-react';
 
+interface ProjectItem {
+  id: number;
+  code: string;
+  name: string;
+  status: string;
+  created_at: string;
+}
+
+interface NumberTypeItem {
+  id: number;
+  type_code: string;
+  type_name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+}
+
+interface FeatureToggles {
+  allow_request_project: boolean;
+  allow_request_number_type: boolean;
+}
+
 interface ApplicationFormProps {
   onApplicationSubmitted?: () => void;
 }
@@ -19,8 +41,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
     number_type: '',
   });
 
-  const [projects, setProjects] = useState<any[]>([]);
-  const [numberTypes, setNumberTypes] = useState<any[]>([]);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [numberTypes, setNumberTypes] = useState<NumberTypeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +53,7 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
   const [requestLoading, setRequestLoading] = useState(false);
 
   // 功能开关状态
-  const [featureToggles, setFeatureToggles] = useState({
+  const [featureToggles, setFeatureToggles] = useState<FeatureToggles>({
     allow_request_project: false,
     allow_request_number_type: false
   });
@@ -68,18 +90,18 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
         settingsAPI.getFeatureToggles(),
         settingsAPI.getCooldown(),
       ]);
-      
-      const toggles = (togglesRes as any).data;
+
+      const toggles = (togglesRes as { data: FeatureToggles }).data;
       if (toggles) {
         setFeatureToggles(toggles);
       }
-      
-      const cooldown = (cooldownRes as any).data?.cooldown_seconds;
+
+      const cooldown = (cooldownRes as { data: { cooldown_seconds: number } }).data?.cooldown_seconds;
       if (cooldown) {
         setCooldownConfig(cooldown);
       }
-    } catch (err) {
-      console.error('加载功能开关失败:', err);
+    } catch {
+      console.error('加载功能开关失败');
     }
   }, []);
 
@@ -91,9 +113,9 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
           projectAPI.getAll('approved,pending'),
           numberTypeAPI.getAll('approved,pending'),
         ]);
-        setProjects((projectsRes as any).data || []);
-        setNumberTypes((numberTypesRes as any).data || []);
-      } catch (err) {
+        setProjects((projectsRes as { data: ProjectItem[] }).data || []);
+        setNumberTypes((numberTypesRes as { data: NumberTypeItem[] }).data || []);
+      } catch {
         setError('加载数据失败');
       }
     };
@@ -130,8 +152,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       setError(null);
       // 刷新项目列表（包括 pending）
       const res = await projectAPI.getAll('approved,pending');
-      setProjects((res as any).data || []);
-    } catch (err: any) {
+      setProjects((res as { data: ProjectItem[] }).data || []);
+    } catch (err: Error) {
       setError(err.message || '申请失败');
     } finally {
       setRequestLoading(false);
@@ -156,8 +178,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       setError(null);
       // 刷新编号类型列表（包括 pending）
       const res = await numberTypeAPI.getAll('approved,pending');
-      setNumberTypes((res as any).data || []);
-    } catch (err: any) {
+      setNumberTypes((res as { data: NumberTypeItem[] }).data || []);
+    } catch (err: Error) {
       setError(err.message || '申请失败');
     } finally {
       setRequestLoading(false);
@@ -229,8 +251,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
         name: formData.applicant_name,
       }));
 
-      const response = await applicationAPI.create({ ...formData, capToken } as any);
-      const fullNumber = (response as any).data?.full_number || '申请成功';
+      const response = await applicationAPI.create({ ...formData, capToken } as { applicant_name: string; project_code: string; number_type: string; capToken: string });
+      const fullNumber = (response as { data: { full_number: string } }).data?.full_number || '申请成功';
       setResult(fullNumber);
 
       // 通知父组件刷新列表
@@ -249,7 +271,7 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       }));
       setCapToken(null);
       setCaptchaKey(prev => prev + 1); // 强制重置验证码组件
-    } catch (err: any) {
+    } catch (err: Error & { response?: { status: number; data?: { retryAfter?: number } } }) {
       if (err.response?.status === 429) {
         const retryAfter = err.response?.data?.retryAfter || cooldownConfig;
         setError(`请求过于频繁，请等待 ${retryAfter} 秒后再次取号`);

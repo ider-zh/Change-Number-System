@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { applicationAPI, projectAPI, numberTypeAPI } from '../services';
+import type { Project, NumberType, Application } from '../services';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -7,27 +8,32 @@ import { Badge } from './ui/badge';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface StatsData {
+  total: number;
+  byType?: Array<{ number_type: string; count: number }>;
+}
+
 export function ApplicationList() {
-  const [applications, setApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const [filters, setFilters] = useState({ 
-    keyword: '', 
-    project_code: '', 
-    number_type: '', 
-    start_date: '', 
+  const [filters, setFilters] = useState({
+    keyword: '',
+    project_code: '',
+    number_type: '',
+    start_date: '',
     end_date: '',
     applicant_name: '',
     ip_address: ''
   });
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
+
   // 高级筛选的候选数据
-  const [projects, setProjects] = useState<any[]>([]);
-  const [numberTypes, setNumberTypes] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [numberTypes, setNumberTypes] = useState<NumberType[]>([]);
 
   // 复制状态
   const [copiedNumber, setCopiedNumber] = useState<string | null>(null);
@@ -35,7 +41,7 @@ export function ApplicationList() {
   // 搜索防抖 ref
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       // 处理 end_date，添加结束时间 23:59:59
@@ -43,20 +49,20 @@ export function ApplicationList() {
       if (apiFilters.end_date) {
         apiFilters.end_date = apiFilters.end_date + ' 23:59:59';
       }
-      
+
       const [appsRes, statsRes] = await Promise.all([
-        applicationAPI.getAll({ ...apiFilters, ...pagination }),
+        applicationAPI.getAll({ ...apiFilters, page: pagination.page, limit: pagination.limit }),
         applicationAPI.getStats(),
       ]);
-      setApplications((appsRes as any).data?.data || []);
-      setPagination((appsRes as any).data?.pagination || pagination);
-      setStats((statsRes as any).data || null);
+      setApplications((appsRes as { data: { data: Application[]; pagination: typeof pagination } }).data?.data || []);
+      setPagination((appsRes as { data: { data: Application[]; pagination: typeof pagination } }).data?.pagination || pagination);
+      setStats((statsRes as { data: StatsData }).data || null);
     } catch (err) {
       console.error('加载数据失败', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.keyword, filters.project_code, filters.number_type, filters.start_date, filters.end_date, filters.applicant_name, filters.ip_address, pagination.page, pagination.limit]);
   
   // 加载高级筛选的候选数据
   const loadFilterOptions = useCallback(async () => {
@@ -65,8 +71,8 @@ export function ApplicationList() {
         projectAPI.getAll('approved'),
         numberTypeAPI.getAll('approved'),
       ]);
-      setProjects((projectsRes as any).data || []);
-      setNumberTypes((numberTypesRes as any).data || []);
+      setProjects((projectsRes as { data: Project[] }).data || []);
+      setNumberTypes((numberTypesRes as { data: NumberType[] }).data || []);
     } catch (err) {
       console.error('加载筛选选项失败', err);
     }
@@ -75,7 +81,8 @@ export function ApplicationList() {
   useEffect(() => {
     loadData();
     loadFilterOptions();
-  }, [filters, pagination.page, loadFilterOptions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.keyword, filters.project_code, filters.number_type, filters.start_date, filters.end_date, filters.applicant_name, filters.ip_address, pagination.page, loadFilterOptions]);
 
   // 清理搜索防抖
   useEffect(() => {
@@ -194,7 +201,7 @@ export function ApplicationList() {
               <span className="block text-xs text-muted-foreground mb-1">总申请数</span>
               <span className="block text-2xl font-bold text-primary">{stats.total}</span>
             </div>
-            {stats.byType?.map((item: any) => (
+            {stats.byType?.map((item: { number_type: string; count: number }) => (
               <div key={item.number_type} className="bg-primary/10 p-4 rounded-lg text-center">
                 <span className="block text-xs text-muted-foreground mb-1">{item.number_type}</span>
                 <span className="block text-2xl font-bold text-primary">{item.count}</span>

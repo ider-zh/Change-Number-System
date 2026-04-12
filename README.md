@@ -22,6 +22,8 @@
 - ✅ 用户编号申请 (自动生成流水号)
 - ✅ 项目代号管理 (预设 + 用户申请)
 - ✅ 编号类型管理 (预设 + 用户申请)
+  - 预设类型: CR (Change Request), DCP (Design Change Proposal), CN (Change Notice), TD (Technical Document)
+  - 编号格式: `{类型}-{项目代号}-{4位流水号}` (例如: `TD-ALPHA01-0001`)
 - ✅ 管理员审核机制
 - ✅ 申请记录管理 (搜索、过滤、分页)
 - ✅ 数据导出 (CSV)

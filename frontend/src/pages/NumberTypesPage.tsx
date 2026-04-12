@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { numberTypeAPI } from '../services';
+import type { NumberType } from '../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -8,7 +9,7 @@ import { Input } from '../components/ui/input';
 
 export function NumberTypesPage() {
   const navigate = useNavigate();
-  const [numberTypes, setNumberTypes] = useState<any[]>([]);
+  const [numberTypes, setNumberTypes] = useState<NumberType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newType, setNewType] = useState({ type_code: '', type_name: '', description: '' });
@@ -26,7 +27,7 @@ export function NumberTypesPage() {
     setLoading(true);
     try {
       const res = await numberTypeAPI.getAll();
-      setNumberTypes((res as any).data || []);
+      setNumberTypes((res as { data: NumberType[] }).data || []);
     } catch (err) {
       console.error('加载失败', err);
     } finally {
@@ -42,7 +43,7 @@ export function NumberTypesPage() {
       setNewType({ type_code: '', type_name: '', description: '' });
       setShowCreateForm(false);
       loadNumberTypes();
-    } catch (err: any) {
+    } catch (err: Error) {
       alert(err.message || '创建失败');
     } finally {
       setProcessing(null);
