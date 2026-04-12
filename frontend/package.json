@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node -e \"const fs=require('fs'); const ver=fs.readFileSync('../VERSION','utf8').trim(); fs.writeFileSync('.env', 'VITE_APP_VERSION='+ver+'\\n'); console.log('Version set to:', ver);\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

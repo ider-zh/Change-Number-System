@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../services';
+import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 
 export function ChangePasswordPage() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -63,19 +62,9 @@ export function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => navigate('/admin/dashboard')}>
-              ← 返回仪表盘
-            </Button>
-            <h1 className="text-2xl font-bold text-gray-800">修改管理员密码</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-2xl mx-auto p-6">
+    <Layout>
+      <div className="max-w-2xl mx-auto p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">修改管理员密码</h2>
         <Card>
           <CardHeader>
             <CardTitle>密码修改</CardTitle>
@@ -148,7 +137,7 @@ export function ChangePasswordPage() {
             <li>• 必须包含数字（0-9）</li>
           </ul>
         </div>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

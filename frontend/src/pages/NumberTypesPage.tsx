@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { numberTypeAPI } from '../services';
 import type { NumberType } from '../services';
+import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -116,17 +117,9 @@ export function NumberTypesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">编号类型管理</h1>
-          <Button variant="outline" onClick={() => navigate('/admin/dashboard')}>
-            返回仪表盘
-          </Button>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-6">
+    <Layout>
+      <div className="max-w-7xl mx-auto p-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">编号类型管理</h2>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
@@ -242,7 +235,7 @@ export function NumberTypesPage() {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }

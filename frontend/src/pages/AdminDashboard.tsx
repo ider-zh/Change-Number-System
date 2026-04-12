@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { applicationAPI, projectAPI, numberTypeAPI } from '../services';
 import type { Project, NumberType } from '../services';
+import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -30,11 +31,11 @@ export function AdminDashboard() {
     allow_request_number_type: false
   });
   const [updatingToggle, setUpdatingToggle] = useState<string | null>(null);
-  
+
   // 冷却时间状态
   const [cooldownSeconds, setCooldownSeconds] = useState(10);
   const [updatingCooldown, setUpdatingCooldown] = useState(false);
-  
+
   // 通知状态
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -70,12 +71,6 @@ export function AdminDashboard() {
     };
     loadData();
   }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('isAdmin');
-    navigate('/admin/login');
-  };
 
   // 处理功能开关变更
   const handleToggleChange = async (key: string, value: boolean) => {
@@ -140,13 +135,13 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <Layout>
       {/* 通知组件 */}
       {notification && (
-        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-20 right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className={`px-4 py-3 rounded-lg shadow-lg ${
-            notification.type === 'success' 
-              ? 'bg-green-500 text-white' 
+            notification.type === 'success'
+              ? 'bg-green-500 text-white'
               : 'bg-red-500 text-white'
           }`}>
             <div className="flex items-center gap-2">
@@ -159,30 +154,7 @@ export function AdminDashboard() {
         </div>
       )}
 
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="outline" size="sm">
-                ← 返回主页
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">管理员仪表盘</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link to="/admin/change-password">
-              <Button variant="outline" size="sm">
-                🔑 修改密码
-              </Button>
-            </Link>
-            <Button variant="outline" onClick={handleLogout}>
-              登出
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6">
         {/* 统计卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
@@ -373,7 +345,7 @@ export function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </Layout>
   );
 }
