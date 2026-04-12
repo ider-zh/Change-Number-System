@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: Frontend Build
 # ============================================
-FROM node:20-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -20,7 +20,7 @@ RUN npm run build
 # ============================================
 # Stage 2: Backend Production Image
 # ============================================
-FROM node:20-alpine AS production
+FROM node:24-alpine AS production
 
 # Add labels for the image
 LABEL org.opencontainers.image.title="Change-Number-System"
