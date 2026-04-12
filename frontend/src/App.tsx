@@ -6,6 +6,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { ReviewPage } from './pages/ReviewPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { NumberTypesPage } from './pages/NumberTypesPage';
+import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -44,6 +45,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <NumberTypesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePasswordPage />
               </ProtectedRoute>
             }
           />

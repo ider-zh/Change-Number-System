@@ -9,4 +9,7 @@ router.post('/login', adminController.login);
 // 管理员登出 (需要认证)
 router.post('/logout', authMiddleware, adminController.logout);
 
+// 修改管理员密码 (需要认证)
+router.post('/change-password', authMiddleware, adminController.changePassword);
+
 module.exports = router;

@@ -54,6 +54,55 @@ function logout(req, res) {
 }
 
 /**
+ * 修改管理员密码
+ */
+async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return errorResponse(res, 400, '当前密码和新密码不能为空');
+    }
+
+    // 密码强度验证
+    if (newPassword.length < 6) {
+      return errorResponse(res, 400, '新密码长度至少 6 位');
+    }
+
+    const hasUpperCase = /[A-Z]/.test(newPassword);
+    const hasLowerCase = /[a-z]/.test(newPassword);
+    const hasNumbers = /\d/.test(newPassword);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      return errorResponse(res, 400, '新密码必须包含大小写字母和数字');
+    }
+
+    const db = getDatabase();
+    const adminId = req.admin.id; // 从 JWT 中间件获取
+    const admin = db.prepare('SELECT * FROM admins WHERE id = ?').get(adminId);
+
+    if (!admin) {
+      return errorResponse(res, 404, '管理员不存在');
+    }
+
+    // 验证当前密码
+    const isValidPassword = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!isValidPassword) {
+      return errorResponse(res, 401, '当前密码错误');
+    }
+
+    // 更新密码
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    db.prepare('UPDATE admins SET password_hash = ? WHERE id = ?').run(newPasswordHash, adminId);
+
+    return successResponse(res, null, '密码修改成功');
+  } catch (error) {
+    console.error('Change password error:', error);
+    return errorResponse(res, 500, '修改密码失败');
+  }
+}
+
+/**
  * 初始化默认管理员
  */
 async function initializeDefaultAdmin() {
@@ -78,5 +127,6 @@ async function initializeDefaultAdmin() {
 module.exports = {
   login,
   logout,
+  changePassword,
   initializeDefaultAdmin,
 };

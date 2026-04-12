@@ -33,7 +33,7 @@ fi
 
 # Set defaults if not configured
 DOCKER_REGISTRY="${DOCKER_REGISTRY:-crpi-yl4pb9sg5y2myg6f.cn-hangzhou.personal.cr.aliyuncs.com}"
-DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME:-9992099/chang_number_system}"
+DOCKER_IMAGE_NAME="${DOCKER_IMAGE_NAME:-9992099/change_number_system}"
 
 TAG=$1
 IMAGE_NAME="${DOCKER_REGISTRY}/${DOCKER_IMAGE_NAME}:${TAG}"

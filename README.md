@@ -193,7 +193,7 @@ bash scripts/docker/build-and-push.sh v1.0.0
 | 变量名 | 值 |
 |--------|-----|
 | `DOCKER_REGISTRY` | `crpi-yl4pb9sg5y2myg6f.cn-hangzhou.personal.cr.aliyuncs.com` |
-| `DOCKER_IMAGE_NAME` | `9992099/chang_number_system` |
+| `DOCKER_IMAGE_NAME` | `9992099/change_number_system` |
 
 **Secrets**（Settings → Secrets and variables → Actions → Secrets）：
 | 密钥名 | 说明 |

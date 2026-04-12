@@ -169,9 +169,16 @@ export function AdminDashboard() {
             </Link>
             <h1 className="text-2xl font-bold text-gray-800">管理员仪表盘</h1>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            登出
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link to="/admin/change-password">
+              <Button variant="outline" size="sm">
+                🔑 修改密码
+              </Button>
+            </Link>
+            <Button variant="outline" onClick={handleLogout}>
+              登出
+            </Button>
+          </div>
         </div>
       </header>
 

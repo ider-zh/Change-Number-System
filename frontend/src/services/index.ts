@@ -100,6 +100,7 @@ export const applicationAPI = {
 export const adminAPI = {
   login: (data: { username: string; password: string }) => api.post('/admin/login', data),
   logout: () => api.post('/admin/logout'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) => api.post('/admin/change-password', data),
 };
 
 export const settingsAPI = {

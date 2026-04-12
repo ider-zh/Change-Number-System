@@ -39,7 +39,7 @@ services:
           memory: 256M
 
   watchtower:
-    image: containrrr/watchtower:latest
+    image: crpi-yl4pb9sg5y2myg6f.cn-hangzhou.personal.cr.aliyuncs.com/9992099/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
     volumes:
