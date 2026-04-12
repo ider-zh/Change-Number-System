@@ -41,7 +41,7 @@ export function Layout({ children }: LayoutProps) {
                   <Activity size={18} />
                 </div>
                 <h1 className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600">
-                  编号管理系统
+                  自动取号系统
                 </h1>
               </Link>
             </div>
@@ -99,7 +99,7 @@ export function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} 编号管理系统
+              © {new Date().getFullYear()} 自动取号系统
             </p>
             <span className="text-xs text-muted-foreground">版本 {import.meta.env.VITE_APP_VERSION || 'v1.0'}</span>
           </div>
