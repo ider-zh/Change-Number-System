@@ -140,7 +140,6 @@ const CapWidget = forwardRef<HTMLDivElement, CapWidgetProps>(
           window.CAP_CUSTOM_FETCH = customFetch;
         }
 
-        // @ts-expect-error cap.js widget import
         await import("@cap.js/widget");
 
         if (mounted) {

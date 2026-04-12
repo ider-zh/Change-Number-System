@@ -43,8 +43,8 @@ export function NumberTypesPage() {
       setNewType({ type_code: '', type_name: '', description: '' });
       setShowCreateForm(false);
       loadNumberTypes();
-    } catch (err: Error) {
-      alert(err.message || '创建失败');
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : '创建失败');
     } finally {
       setProcessing(null);
     }

@@ -9,6 +9,9 @@ export interface Project {
   created_by?: string;
   created_at: string;
   approved_at?: string;
+  project_code?: string;
+  project_name?: string;
+  user_id?: string;
 }
 
 export interface NumberType {
@@ -20,6 +23,7 @@ export interface NumberType {
   created_by?: string;
   created_at: string;
   approved_at?: string;
+  user_id?: string;
 }
 
 export interface Application {

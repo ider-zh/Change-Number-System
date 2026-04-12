@@ -25,8 +25,8 @@ export function AdminLogin() {
       localStorage.setItem('isAdmin', 'true');
       
       navigate('/admin/dashboard');
-    } catch (err: Error) {
-      setError(err.message || '登录失败');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '登录失败');
     } finally {
       setLoading(false);
     }

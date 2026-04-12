@@ -43,8 +43,8 @@ export function ProjectsPage() {
       setNewProject({ code: '', name: '' });
       setShowCreateForm(false);
       loadProjects();
-    } catch (err: Error) {
-      alert(err.message || '创建失败');
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : '创建失败');
     } finally {
       setProcessing(null);
     }

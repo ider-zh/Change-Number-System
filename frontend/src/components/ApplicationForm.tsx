@@ -153,8 +153,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       // 刷新项目列表（包括 pending）
       const res = await projectAPI.getAll('approved,pending');
       setProjects((res as { data: ProjectItem[] }).data || []);
-    } catch (err: Error) {
-      setError(err.message || '申请失败');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '申请失败');
     } finally {
       setRequestLoading(false);
     }
@@ -179,8 +179,8 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       // 刷新编号类型列表（包括 pending）
       const res = await numberTypeAPI.getAll('approved,pending');
       setNumberTypes((res as { data: NumberTypeItem[] }).data || []);
-    } catch (err: Error) {
-      setError(err.message || '申请失败');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '申请失败');
     } finally {
       setRequestLoading(false);
     }
@@ -271,13 +271,14 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
       }));
       setCapToken(null);
       setCaptchaKey(prev => prev + 1); // 强制重置验证码组件
-    } catch (err: Error & { response?: { status: number; data?: { retryAfter?: number } } }) {
-      if (err.response?.status === 429) {
-        const retryAfter = err.response?.data?.retryAfter || cooldownConfig;
+    } catch (err: unknown) {
+      const error = err as { response?: { status: number; data?: { retryAfter?: number } }; message?: string };
+      if (error.response?.status === 429) {
+        const retryAfter = error.response?.data?.retryAfter || cooldownConfig;
         setError(`请求过于频繁，请等待 ${retryAfter} 秒后再次取号`);
         startCooldown(retryAfter);
       } else {
-        setError(err.message || '提交申请失败');
+        setError(error.message || '提交申请失败');
       }
     } finally {
       setLoading(false);

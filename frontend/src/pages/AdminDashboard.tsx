@@ -87,15 +87,15 @@ export function AdminDashboard() {
         [key]: value
       });
 
-      if ((response as { success: boolean }).success) {
-        setFeatureToggles((response as { data: FeatureToggles }).data);
+      if ((response as unknown as { success: boolean }).success) {
+        setFeatureToggles((response as unknown as { data: FeatureToggles }).data);
         setNotification({ message: '功能开关已更新', type: 'success' });
       } else {
         setNotification({ message: '更新失败，请重试', type: 'error' });
       }
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error(`更新开关 ${key} 失败:`, error);
-      setNotification({ message: error.message || '更新失败，请重试', type: 'error' });
+      setNotification({ message: (error as Error).message || '更新失败，请重试', type: 'error' });
     } finally {
       setUpdatingToggle(null);
     }
@@ -111,15 +111,15 @@ export function AdminDashboard() {
         cooldown_seconds: value
       });
 
-      if ((response as { success: boolean }).success) {
-        setCooldownSeconds((response as { data: { cooldown_seconds: number } }).data.cooldown_seconds);
+      if ((response as unknown as { success: boolean }).success) {
+        setCooldownSeconds((response as unknown as { data: { cooldown_seconds: number } }).data.cooldown_seconds);
         setNotification({ message: '冷却时间已更新', type: 'success' });
       } else {
         setNotification({ message: '更新失败，请重试', type: 'error' });
       }
-    } catch (error: Error) {
+    } catch (error: unknown) {
       console.error('更新冷却时间失败:', error);
-      setNotification({ message: error.message || '更新失败，请重试', type: 'error' });
+      setNotification({ message: (error as Error).message || '更新失败，请重试', type: 'error' });
     } finally {
       setUpdatingCooldown(false);
     }
