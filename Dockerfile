@@ -8,6 +8,9 @@ WORKDIR /app/frontend
 # Copy frontend package files first for better caching
 COPY frontend/package*.json ./
 
+# Copy VERSION file for the prebuild script
+COPY VERSION ../VERSION
+
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
 
