@@ -72,7 +72,7 @@ export const numberTypeAPI = {
 export const applicationAPI = {
   create: (data: { applicant_name: string; project_code: string; number_type: string }) =>
     api.post('/applications', data),
-  getAll: (params: { page?: number; limit?: number; keyword?: string; project_code?: string; number_type?: string; start_date?: string; end_date?: string; applicant_name?: string; ip_address?: string }) => api.get('/applications', { params }),
+  getAll: (params: { page?: number; limit?: number; keyword?: string; project_code?: string; number_type?: string; start_date?: string; end_date?: string; applicant_name?: string; ip_address?: string; sort_by?: string; sort_order?: string }) => api.get('/applications', { params }),
   getStats: () => api.get('/applications/stats'),
   delete: (id: number) => api.delete(`/applications/${id}`),
   batchDelete: (ids: number[]) => api.delete('/applications', { data: { ids } }),
@@ -102,6 +102,7 @@ export const adminAPI = {
   logout: () => api.post('/admin/logout'),
   changePassword: (data: { currentPassword: string; newPassword: string }) => api.post('/admin/change-password', data),
   deleteApplication: (id: number) => api.delete(`/admin/applications/${id}`),
+  batchDeleteApplications: (ids: number[]) => api.delete('/admin/applications/batch', { data: { ids } }),
 };
 
 export const settingsAPI = {

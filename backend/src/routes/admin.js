@@ -16,4 +16,7 @@ router.post('/change-password', authMiddleware, adminController.changePassword);
 // 删除单条申请记录 (需要认证)
 router.delete('/applications/:id', authMiddleware, applicationController.deleteApplication);
 
+// 批量删除申请记录 (需要认证)
+router.delete('/applications/batch', authMiddleware, applicationController.batchDeleteApplications);
+
 module.exports = router;

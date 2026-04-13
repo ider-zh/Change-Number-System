@@ -136,8 +136,30 @@ async function createApplication(req, res) {
  */
 function getApplications(req, res) {
   try {
-    const { page = 1, limit = 10, keyword, project_code, number_type, start_date, end_date, applicant_type, applicant_name, ip_address } = req.query;
+    const { page = 1, limit = 10, keyword, project_code, number_type, start_date, end_date, applicant_type, applicant_name, ip_address, sort_by, sort_order } = req.query;
     const db = getDatabase();
+
+    // 排序字段白名单校验
+    const ALLOWED_SORT_FIELDS = ['created_at', 'full_number', 'applicant_name'];
+    const ALLOWED_SORT_ORDERS = ['ASC', 'DESC'];
+
+    let orderBy = 'created_at'; // 默认排序字段
+    let orderDirection = 'DESC'; // 默认排序方向
+
+    if (sort_by) {
+      if (!ALLOWED_SORT_FIELDS.includes(sort_by)) {
+        return errorResponse(res, 400, `无效的排序字段，允许的字段为: ${ALLOWED_SORT_FIELDS.join(', ')}`);
+      }
+      orderBy = sort_by;
+    }
+
+    if (sort_order) {
+      const upperOrder = sort_order.toUpperCase();
+      if (!ALLOWED_SORT_ORDERS.includes(upperOrder)) {
+        return errorResponse(res, 400, `无效的排序方向，允许的方向为: ${ALLOWED_SORT_ORDERS.join(', ')}`);
+      }
+      orderDirection = upperOrder;
+    }
 
     let query = 'SELECT * FROM applications';
     const whereClauses = [];
@@ -206,7 +228,7 @@ function getApplications(req, res) {
 
     // 分页
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+    query += ` ORDER BY ${orderBy} ${orderDirection} LIMIT ? OFFSET ?`;
     params.push(parseInt(limit), offset);
 
     const applications = db.prepare(query).all(...params);
