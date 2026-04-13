@@ -184,22 +184,22 @@ function getApplications(req, res) {
       params.push(keywordParam, keywordParam, keywordParam);
     }
 
-    // 项目代号过滤
+    // 项目代号过滤（模糊匹配，忽略大小写）
     if (project_code) {
-      whereClauses.push('project_code = ?');
-      params.push(project_code);
+      whereClauses.push('LOWER(project_code) LIKE LOWER(?)');
+      params.push(`%${project_code}%`);
     }
 
-    // 编号类型过滤
+    // 编号类型过滤（模糊匹配，忽略大小写）
     if (number_type) {
-      whereClauses.push('number_type = ?');
-      params.push(number_type);
+      whereClauses.push('LOWER(number_type) LIKE LOWER(?)');
+      params.push(`%${number_type}%`);
     }
 
-    // 申请人类型过滤
+    // 申请人类型过滤（模糊匹配，忽略大小写）
     if (applicant_type) {
-      whereClauses.push('applicant_type = ?');
-      params.push(applicant_type);
+      whereClauses.push('LOWER(applicant_type) LIKE LOWER(?)');
+      params.push(`%${applicant_type}%`);
     }
 
     // IP 地址过滤（仅管理员）

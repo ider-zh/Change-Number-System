@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { applicationAPI, adminAPI } from '../services';
 import type { Application } from '../services';
@@ -41,8 +41,10 @@ export function AdminApplicationsPage() {
 
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [pagination, setPagination] = useState({ page: Number(searchParams.get('page')) || 1, limit: 20, total: 0, totalPages: 0 });
   const [filters, setFilters] = useState<Filters>(getInitialFilters);
+  const [debouncedFilters, setDebouncedFilters] = useState<Filters>(getInitialFilters);
+  const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
   // 排序状态
@@ -53,7 +55,7 @@ export function AdminApplicationsPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
-  // 同步筛选参数到 URL
+  // 同步筛选参数到 URL（防抖）
   const syncFiltersToURL = useCallback((newFilters: Filters) => {
     const params = new URLSearchParams();
     if (newFilters.keyword) params.set('keyword', newFilters.keyword);
@@ -69,6 +71,20 @@ export function AdminApplicationsPage() {
     setSearchParams(params);
   }, [pagination.page, sortBy, sortOrder, setSearchParams]);
 
+  // 当防抖的筛选状态变化时，同步到 URL
+  useEffect(() => {
+    syncFiltersToURL(debouncedFilters);
+  }, [debouncedFilters, syncFiltersToURL]);
+
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (filterTimerRef.current) {
+        clearTimeout(filterTimerRef.current);
+      }
+    };
+  }, []);
+
   // 检查管理员权限
   useEffect(() => {
     if (localStorage.getItem('isAdmin') !== 'true') {
@@ -80,13 +96,13 @@ export function AdminApplicationsPage() {
   // 加载数据
   useEffect(() => {
     loadData();
-  }, [pagination.page, filters, sortBy, sortOrder]);
+  }, [pagination.page, debouncedFilters, sortBy, sortOrder]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await applicationAPI.getAll({
-        ...filters,
+        ...debouncedFilters,
         page: pagination.page,
         limit: pagination.limit,
         sort_by: sortBy,
@@ -102,7 +118,7 @@ export function AdminApplicationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.limit, sortBy, sortOrder]);
+  }, [debouncedFilters, pagination.page, pagination.limit, sortBy, sortOrder]);
 
   // 单条删除
   const handleDelete = async (id: number, applicantName: string) => {
@@ -153,7 +169,18 @@ export function AdminApplicationsPage() {
   // 关键字搜索
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPagination(prev => ({ ...prev, page: 1 }));
-    setFilters(prev => ({ ...prev, keyword: e.target.value }));
+    const newFilters = { ...filters, keyword: e.target.value };
+    setFilters(newFilters);
+    
+    // 清除之前的定时器
+    if (filterTimerRef.current) {
+      clearTimeout(filterTimerRef.current);
+    }
+    
+    // 设置新的定时器，500ms 后同步到 URL 和加载数据
+    filterTimerRef.current = setTimeout(() => {
+      setDebouncedFilters(newFilters);
+    }, 500);
   };
 
   // 筛选条件变化时更新 URL
@@ -161,7 +188,16 @@ export function AdminApplicationsPage() {
     setPagination(prev => ({ ...prev, page: 1 }));
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    syncFiltersToURL(newFilters);
+    
+    // 清除之前的定时器
+    if (filterTimerRef.current) {
+      clearTimeout(filterTimerRef.current);
+    }
+    
+    // 设置新的定时器，500ms 后同步到 URL 和加载数据
+    filterTimerRef.current = setTimeout(() => {
+      setDebouncedFilters(newFilters);
+    }, 500);
   };
 
   // 清除单个筛选条件
@@ -169,7 +205,11 @@ export function AdminApplicationsPage() {
     setPagination(prev => ({ ...prev, page: 1 }));
     const newFilters = { ...filters, [key]: '' };
     setFilters(newFilters);
-    syncFiltersToURL(newFilters);
+    setDebouncedFilters(newFilters);
+    
+    if (filterTimerRef.current) {
+      clearTimeout(filterTimerRef.current);
+    }
   };
 
   // 清除所有筛选条件
@@ -185,7 +225,11 @@ export function AdminApplicationsPage() {
       end_date: '',
     };
     setFilters(newFilters);
-    syncFiltersToURL(newFilters);
+    setDebouncedFilters(newFilters);
+    
+    if (filterTimerRef.current) {
+      clearTimeout(filterTimerRef.current);
+    }
   };
 
   // 排序切换
@@ -200,11 +244,6 @@ export function AdminApplicationsPage() {
     setSortBy(field);
     setSortOrder(newOrder);
     setPagination(prev => ({ ...prev, page: 1 }));
-
-    // 同步到 URL
-    setTimeout(() => {
-      syncFiltersToURL(filters);
-    }, 0);
   };
 
   // 获取排序图标
