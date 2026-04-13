@@ -286,90 +286,120 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>编号申请</CardTitle>
+    <Card className="max-w-2xl mx-auto relative overflow-hidden border-2 border-primary/30 shadow-2xl shadow-primary/20">
+      {/* 渐变背景装饰 */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5 pointer-events-none" />
+      {/* 顶部装饰条 */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-primary animate-pulse" />
+      
+      <CardHeader className="relative bg-gradient-to-r from-primary/10 via-blue-500/10 to-primary/10 border-b border-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 border-2 border-primary/40 animate-pulse">
+            <span className="text-2xl">📝</span>
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+              编号申请
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">快速生成您的专属编号</p>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="relative pt-6 space-y-6">
         {error && (
-          <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-md mb-4">
-            {error}
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-destructive/40 text-destructive px-5 py-4 rounded-lg mb-4 shadow-md animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-start gap-2">
+              <span className="text-xl">⚠️</span>
+              <div className="flex-1 font-medium">{error}</div>
+            </div>
           </div>
         )}
         {result && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-4 rounded-md mb-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <span className="text-sm font-medium">✓ 生成的编号:</span>
-                <span className="ml-2 font-bold text-lg">{result}</span>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-400/60 text-green-700 px-5 py-5 rounded-lg mb-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✅</span>
+                <div>
+                  <div className="text-sm font-semibold text-green-800">✓ 生成的编号</div>
+                  <div className="font-bold text-xl text-green-900 mt-1 font-mono tracking-wide">{result}</div>
+                </div>
               </div>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
-                className="h-8 w-8 p-0 shrink-0"
+                className="h-10 w-10 p-0 shrink-0 border-green-400 hover:bg-green-100 hover:border-green-500 transition-all"
                 onClick={() => copyToClipboard(result)}
                 title="点击复制"
               >
                 {copiedNumber === result ? (
-                  <Check className="h-4 w-4 text-green-600" />
+                  <Check className="h-5 w-5 text-green-600" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-5 w-5 text-green-600" />
                 )}
               </Button>
             </div>
             {copiedNumber === result && (
-              <div className="text-xs text-green-600 mt-1">已复制到剪贴板</div>
+              <div className="text-xs text-green-700 mt-2 font-medium bg-green-100/50 px-2 py-1 rounded inline-block">
+                ✓ 已复制到剪贴板
+              </div>
             )}
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-              申请人姓名 *
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2 p-4 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 rounded-lg border border-blue-200/50">
+            <label className="text-sm font-semibold leading-none flex items-center gap-2">
+              <span className="text-lg">👤</span>
+              <span>申请人姓名</span>
+              <span className="text-destructive">*</span>
             </label>
             <Input
               value={formData.applicant_name}
               onChange={(e) => setFormData(prev => ({ ...prev, applicant_name: e.target.value }))}
               placeholder="请输入申请人姓名"
               required
+              className="border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 bg-white"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 p-4 bg-gradient-to-r from-purple-50/50 to-pink-50/50 rounded-lg border border-purple-200/50">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-medium leading-none">
-                项目代号 *
+              <label className="text-sm font-semibold leading-none flex items-center gap-2">
+                <span className="text-lg">📁</span>
+                <span>项目代号</span>
+                <span className="text-destructive">*</span>
               </label>
               {(featureToggles.allow_request_project || isAdmin) && (
                 <Button
                   type="button"
-                  variant="link"
+                  variant="outline"
                   size="sm"
-                  className="h-auto p-0 text-xs"
+                  className="h-auto px-3 py-1 text-xs border-purple-300 hover:bg-purple-100 hover:border-purple-400 transition-all"
                   onClick={() => setShowProjectRequest(!showProjectRequest)}
                 >
-                  {showProjectRequest ? '取消申请' : '申请新项目'}
+                  {showProjectRequest ? '✕ 取消' : '+ 申请新项目'}
                 </Button>
               )}
             </div>
             {showProjectRequest ? (
-              <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <div className="space-y-3 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-md shadow-inner">
                 <Input
                   placeholder="项目代号 *"
                   value={newProject.project_code}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_code: e.target.value }))}
+                  className="border-2 focus:border-orange-400"
                 />
                 <Input
                   placeholder="项目名称 (可选)"
                   value={newProject.project_name}
                   onChange={(e) => setNewProject(prev => ({ ...prev, project_name: e.target.value }))}
+                  className="border-2 focus:border-orange-400"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 border-0 shadow-md"
                   loading={requestLoading}
                   onClick={() => handleProjectRequest()}
                 >
@@ -386,44 +416,49 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 p-4 bg-gradient-to-r from-green-50/50 to-teal-50/50 rounded-lg border border-green-200/50">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-medium leading-none">
-                编号类型 *
+              <label className="text-sm font-semibold leading-none flex items-center gap-2">
+                <span className="text-lg">🏷️</span>
+                <span>编号类型</span>
+                <span className="text-destructive">*</span>
               </label>
               {(featureToggles.allow_request_number_type || isAdmin) && (
                 <Button
                   type="button"
-                  variant="link"
+                  variant="outline"
                   size="sm"
-                  className="h-auto p-0 text-xs"
+                  className="h-auto px-3 py-1 text-xs border-green-300 hover:bg-green-100 hover:border-green-400 transition-all"
                   onClick={() => setShowNumberTypeRequest(!showNumberTypeRequest)}
                 >
-                  {showNumberTypeRequest ? '取消申请' : '申请新编号类型'}
+                  {showNumberTypeRequest ? '✕ 取消' : '+ 申请新类型'}
                 </Button>
               )}
             </div>
             {showNumberTypeRequest ? (
-              <div className="space-y-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+              <div className="space-y-3 p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-md shadow-inner">
                 <Input
                   placeholder="类型代码 *"
                   value={newNumberType.type_code}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_code: e.target.value }))}
+                  className="border-2 focus:border-orange-400"
                 />
                 <Input
                   placeholder="类型名称 (可选)"
                   value={newNumberType.type_name}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, type_name: e.target.value }))}
+                  className="border-2 focus:border-orange-400"
                 />
                 <Input
                   placeholder="描述 (可选)"
                   value={newNumberType.description}
                   onChange={(e) => setNewNumberType(prev => ({ ...prev, description: e.target.value }))}
+                  className="border-2 focus:border-orange-400"
                 />
                 <Button
                   type="button"
                   size="sm"
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 border-0 shadow-md"
                   loading={requestLoading}
                   onClick={() => handleNumberTypeRequest()}
                 >
@@ -435,7 +470,7 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
                 value={formData.number_type}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, number_type: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="border-2 focus:border-green-400 transition-all">
                   <SelectValue placeholder="请选择编号类型" />
                 </SelectTrigger>
                 <SelectContent>
@@ -450,8 +485,12 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
           </div>
 
           {/* 人机验证 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">人机验证 *</label>
+          <div className="space-y-2 p-4 bg-gradient-to-r from-yellow-50/50 to-amber-50/50 rounded-lg border border-yellow-200/50">
+            <label className="text-sm font-semibold flex items-center gap-2">
+              <span className="text-lg">🔒</span>
+              <span>人机验证</span>
+              <span className="text-destructive">*</span>
+            </label>
             <CapVerification
               key={captchaKey}
               endpoint="/cap/"
@@ -467,8 +506,25 @@ export function ApplicationForm({ onApplicationSubmitted }: ApplicationFormProps
             />
           </div>
 
-          <Button type="submit" loading={loading} size="lg" className="w-full" disabled={isCoolingDown || loading || !capToken}>
-            {isCoolingDown ? `请等待 ${cooldownSeconds}s 后可再次取号` : '提交申请'}
+          <Button 
+            type="submit" 
+            loading={loading} 
+            size="lg" 
+            className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary via-blue-600 to-primary hover:from-primary/90 hover:via-blue-700 hover:to-primary/90 shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5 transition-all duration-200 border-2 border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none" 
+            disabled={isCoolingDown || loading || !capToken}
+          >
+            {isCoolingDown ? (
+              <span className="flex items-center gap-2">
+                <span className="animate-pulse">⏱️</span>
+                <span>请等待 {cooldownSeconds}s 后可再次取号</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <span className="text-xl">✨</span>
+                <span>提交申请</span>
+                <span className="text-xl">✨</span>
+              </span>
+            )}
           </Button>
         </form>
       </CardContent>
