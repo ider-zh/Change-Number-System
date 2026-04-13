@@ -7,6 +7,7 @@ import { ReviewPage } from './pages/ReviewPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { NumberTypesPage } from './pages/NumberTypesPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { AdminApplicationsPage } from './pages/AdminApplicationsPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -53,6 +54,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChangePasswordPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/applications"
+            element={
+              <ProtectedRoute>
+                <AdminApplicationsPage />
               </ProtectedRoute>
             }
           />

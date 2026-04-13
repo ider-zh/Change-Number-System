@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
+import { formatBeijingTime } from '@/utils/timezone';
 
 export function ProjectsPage() {
   const navigate = useNavigate();
@@ -177,25 +178,25 @@ export function ProjectsPage() {
               </div>
             )}
 
-            <div className="rounded-md border">
+            <div className="overflow-x-auto rounded-md border">
               <table className="w-full">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="h-12 px-4 text-left font-medium">代号</th>
-                    <th className="h-12 px-4 text-left font-medium">名称</th>
-                    <th className="h-12 px-4 text-left font-medium">状态</th>
-                    <th className="h-12 px-4 text-left font-medium">创建时间</th>
-                    <th className="h-12 px-4 text-left font-medium">操作</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">代号</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">名称</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">状态</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">创建时间</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">操作</th>
                   </tr>
                 </thead>
                 <tbody>
                   {projects.map(project => (
                     <tr key={project.id} className="border-b hover:bg-muted/50">
-                      <td className="p-4"><Badge>{project.code}</Badge></td>
-                      <td className="p-4">{project.name || '-'}</td>
-                      <td className="p-4">{getStatusBadge(project.status)}</td>
-                      <td className="p-4 text-muted-foreground">{new Date(project.created_at).toLocaleString('zh-CN')}</td>
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap"><Badge>{project.code}</Badge></td>
+                      <td className="p-4 whitespace-nowrap">{project.name || '-'}</td>
+                      <td className="p-4 whitespace-nowrap">{getStatusBadge(project.status)}</td>
+                      <td className="p-4 text-muted-foreground whitespace-nowrap">{formatBeijingTime(project.created_at)}</td>
+                      <td className="p-4 whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button
                             variant="outline"

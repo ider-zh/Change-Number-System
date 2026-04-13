@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShieldCheck, Activity, LogOut, LayoutDashboard, Database, Settings, LogIn } from 'lucide-react';
+import { ShieldCheck, Activity, LogOut, LayoutDashboard, Database, Settings, LogIn, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface LayoutProps {
@@ -19,6 +19,7 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = isAdmin ? [
     { label: '控制面板', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: '申请管理', path: '/admin/applications', icon: FileText },
     { label: '项目管理', path: '/admin/projects', icon: Database },
     { label: '编号类型', path: '/admin/number-types', icon: Settings },
     { label: '人工审核', path: '/admin/review', icon: ShieldCheck },

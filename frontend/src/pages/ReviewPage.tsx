@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
+import { formatBeijingTime } from '@/utils/timezone';
 
 export function ReviewPage() {
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ export function ReviewPage() {
                           <div className="font-medium">项目代号: <Badge>{project.project_code}</Badge></div>
                           <div className="text-sm text-muted-foreground mt-1">项目名称: {project.project_name}</div>
                           <div className="text-sm text-muted-foreground">申请人: {project.user_id}</div>
-                          <div className="text-sm text-muted-foreground">申请时间: {new Date(project.created_at).toLocaleString('zh-CN')}</div>
+                          <div className="text-sm text-muted-foreground">申请时间: {formatBeijingTime(project.created_at)}</div>
                         </div>
                         <Badge variant="default">待审核</Badge>
                       </div>
@@ -168,7 +169,7 @@ export function ReviewPage() {
                           <div className="text-sm text-muted-foreground mt-1">类型名称: {nt.type_name}</div>
                           {nt.description && <div className="text-sm text-muted-foreground">描述: {nt.description}</div>}
                           <div className="text-sm text-muted-foreground">申请人: {nt.user_id}</div>
-                          <div className="text-sm text-muted-foreground">申请时间: {new Date(nt.created_at).toLocaleString('zh-CN')}</div>
+                          <div className="text-sm text-muted-foreground">申请时间: {formatBeijingTime(nt.created_at)}</div>
                         </div>
                         <Badge variant="default">待审核</Badge>
                       </div>

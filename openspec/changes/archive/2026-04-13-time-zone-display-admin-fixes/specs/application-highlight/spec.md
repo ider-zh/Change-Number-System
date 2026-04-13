@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: 新提交的申请记录高亮显示
 
@@ -19,6 +19,8 @@
 #### Scenario: 高亮自动消失
 - **WHEN** 新记录高亮显示超过 30 秒
 - **THEN** 系统自动移除高亮样式，恢复正常显示
+
+## ADDED Requirements
 
 ### Requirement: 申请记录列表响应式布局
 

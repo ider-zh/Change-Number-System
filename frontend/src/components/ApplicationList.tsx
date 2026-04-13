@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatBeijingTime } from '@/utils/timezone';
 
 interface StatsData {
   total: number;
@@ -296,11 +297,11 @@ export function ApplicationList() {
           <div className="text-center py-10 text-muted-foreground">暂无申请记录</div>
         ) : (
           <>
-            <div className="rounded-md border mb-6">
+            <div className="overflow-x-auto rounded-md border mb-6">
               <table className="w-full">
                 <thead className="bg-muted">
                   <tr>
-                    {isAdmin && <th className="h-12 px-4 text-left font-medium w-12">
+                    {isAdmin && <th className="h-12 px-4 text-left font-medium w-12 whitespace-nowrap">
                       <input
                         type="checkbox"
                         onChange={handleSelectAll}
@@ -308,12 +309,12 @@ export function ApplicationList() {
                         className="h-4 w-4 rounded border-gray-300"
                       />
                     </th>}
-                    <th className="h-12 px-4 text-left font-medium">完整编号</th>
-                    <th className="h-12 px-4 text-left font-medium">申请人</th>
-                    <th className="h-12 px-4 text-left font-medium">项目代号</th>
-                    <th className="h-12 px-4 text-left font-medium">编号类型</th>
-                    <th className="h-12 px-4 text-left font-medium">申请时间</th>
-                    {isAdmin && <th className="h-12 px-4 text-left font-medium">IP 地址</th>}
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">完整编号</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">申请人</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">项目代号</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">编号类型</th>
+                    <th className="h-12 px-4 text-left font-medium whitespace-nowrap">申请时间</th>
+                        {isAdmin && <th className="h-12 px-4 text-left font-medium whitespace-nowrap hidden sm:table-cell">IP 地址</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -328,7 +329,7 @@ export function ApplicationList() {
                         )}
                       >
                         {isAdmin && (
-                          <td className="p-4">
+                          <td className="p-4 whitespace-nowrap">
                             <input
                               type="checkbox"
                               checked={selectedIds.includes(app.id)}
@@ -337,7 +338,7 @@ export function ApplicationList() {
                             />
                           </td>
                         )}
-                        <td className="p-4 font-medium">
+                        <td className="p-4 font-medium whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => copyToClipboard(app.full_number)}
@@ -355,15 +356,15 @@ export function ApplicationList() {
                             <div className="text-xs text-green-600 mt-0.5">已复制</div>
                           )}
                         </td>
-                        <td className="p-4">{app.applicant_name}</td>
-                        <td className="p-4">{app.project_code}</td>
-                        <td className="p-4">
+                        <td className="p-4 whitespace-nowrap">{app.applicant_name}</td>
+                        <td className="p-4 whitespace-nowrap">{app.project_code}</td>
+                        <td className="p-4 whitespace-nowrap">
                           <Badge variant="secondary">{app.number_type}</Badge>
                         </td>
-                        <td className="p-4 text-muted-foreground">
-                          {new Date(app.created_at).toLocaleString('zh-CN')}
+                        <td className="p-4 text-muted-foreground whitespace-nowrap">
+                          {formatBeijingTime(app.created_at)}
                         </td>
-                        {isAdmin && <td className="p-4 text-muted-foreground">{app.ip_address || '-'}</td>}
+                        {isAdmin && <td className="p-4 text-muted-foreground whitespace-nowrap hidden sm:table-cell">{app.ip_address || '-'}</td>}
                       </tr>
                     );
                   })}
