@@ -55,8 +55,6 @@ export function FormTemplateDownload() {
     return () => { cancelled = true; };
   }, []);
 
-  const readyCount = list.filter((i) => i.exists).length;
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       {/* 可点击的标题栏 */}
