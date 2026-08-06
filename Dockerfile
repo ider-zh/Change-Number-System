@@ -5,14 +5,23 @@ FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
-# Copy frontend package files first for better caching
+# Copy frontend package files first for better caching.
+# NOTE: VERSION is copied AFTER `npm ci` (below) because it is only consumed
+# by the prebuild script at `npm run build` time — keeping it out of the
+# dependency-install layer means bumping the version no longer invalidates
+# the (slow) npm ci cache.
 COPY frontend/package*.json ./
 
-# Copy VERSION file for the prebuild script
-COPY VERSION ../VERSION
+# Install all dependencies (including devDependencies for build).
+# npm uses the npmmirror registry directly (no proxy) — it is reachable
+# without the proxy and is far faster/reliable that way.
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm config set proxy "" \
+    && npm config set https-proxy "" \
+    && npm ci
 
-# Install all dependencies (including devDependencies for build)
-RUN npm ci
+# Copy VERSION file for the prebuild script (must precede `npm run build`).
+COPY VERSION ../VERSION
 
 # Copy frontend source code
 COPY frontend/ ./
@@ -33,7 +42,8 @@ LABEL org.opencontainers.image.source="https://github.com/ider-zh/Change-Number-
 # Set working directory
 WORKDIR /app
 
-# Install necessary system packages for better-sqlite3
+# Install necessary system packages for better-sqlite3.
+# The Alpine package repo is reachable directly (no proxy required).
 RUN apk add --no-cache python3 make g++
 
 # Create a non-root user
@@ -43,8 +53,12 @@ RUN addgroup -g 1001 -S appgroup && \
 # Copy backend package files
 COPY backend/package*.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev && npm cache clean --force
+# Install production dependencies only.
+# Same as the frontend: npmmirror directly, no proxy.
+RUN npm config set registry https://registry.npmmirror.com \
+    && npm config set proxy "" \
+    && npm config set https-proxy "" \
+    && npm ci --omit=dev && npm cache clean --force
 
 # Copy backend source code
 COPY backend/ ./
