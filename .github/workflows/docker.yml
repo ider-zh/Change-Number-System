@@ -114,6 +114,8 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64
+          provenance: false
+          sbom: false
           tags: |
             ${{ env.FULL_IMAGE_NAME }}:latest
             ${{ env.FULL_IMAGE_NAME }}:${{ steps.version.outputs.TAG }}
