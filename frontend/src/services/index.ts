@@ -36,6 +36,12 @@ export interface TechnicalDocumentKeyword {
   approved_at?: string;
 }
 
+export interface QualitySystemCode {
+  id: number;
+  code: string;
+  created_at: string;
+}
+
 export interface Application {
   id: number;
   applicant_name: string;
@@ -195,6 +201,10 @@ export const adminAPI = {
 };
 
 export const technicalDocumentAPI = {
+  getQualitySystemCodes: () => api.get('/technical-documents/quality-system-codes'),
+  createQualitySystemCode: (code: string) => api.post('/technical-documents/quality-system-codes', { code }),
+  updateQualitySystemCode: (id: number, code: string) => api.put(`/technical-documents/quality-system-codes/${id}`, { code }),
+  deleteQualitySystemCode: (id: number) => api.delete(`/technical-documents/quality-system-codes/${id}`),
   getKeywords: (status?: string) => {
     const params = status ? { status } : undefined;
     return api.get('/technical-documents/keywords', { params });
@@ -297,4 +307,3 @@ export const guideQnaAPI = {
   getHistoryDetail: (id: number) => api.get(`/guide-qna/history/${id}`),
   deleteHistory: (id: number) => api.delete(`/guide-qna/history/${id}`),
 };
-

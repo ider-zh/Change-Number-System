@@ -9,6 +9,12 @@ router.post('/keywords', authMiddleware, technicalDocumentController.createKeywo
 router.put('/keywords/:id', authMiddleware, technicalDocumentController.updateKeyword);
 router.delete('/keywords/:id', authMiddleware, technicalDocumentController.deleteKeyword);
 
+// 其他质量体系文件关键代号
+router.get('/quality-system-codes', technicalDocumentController.getQualitySystemCodes);
+router.post('/quality-system-codes', authMiddleware, technicalDocumentController.createQualitySystemCode);
+router.put('/quality-system-codes/:id', authMiddleware, technicalDocumentController.updateQualitySystemCode);
+router.delete('/quality-system-codes/:id', authMiddleware, technicalDocumentController.deleteQualitySystemCode);
+
 // 导入现有 QTD 编号
 router.post('/import', authMiddleware, technicalDocumentController.importApplications);
 

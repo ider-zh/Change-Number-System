@@ -2,6 +2,8 @@
 
 一个基于 React + TypeScript + Express + SQLite 的自动取号管理系统。
 
+版本变更见 [修订记录](CHANGELOG.md)。
+
 ## 技术栈
 
 **前端:**

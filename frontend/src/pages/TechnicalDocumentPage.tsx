@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout } from '../components/Layout';
-import { TechnicalDocumentForm, TECH_CATEGORIES, BOM_SUBTYPES } from '../components/TechnicalDocumentForm';
+import { TechnicalDocumentForm } from '../components/TechnicalDocumentForm';
+import { TECH_CATEGORIES, BOM_SUBTYPES } from '../components/technicalDocumentConstants';
 import { DifyChatbotEmbed } from '../components/DifyChatbotEmbed';
 import { applicationAPI } from '../services';
 import { Button } from '../components/ui/button';
@@ -88,17 +89,13 @@ export function TechnicalDocumentPage() {
 
   const loadAllQtdRecords = async () => {
     try {
-      const res = await applicationAPI.getAll({ number_type: 'QTD,DHF,SOP,SOFT,BOM,DRW,HISTORICAL', limit: 1000 });
+      const res = await applicationAPI.getAll({ number_type: 'QTD,DHF,SOP,SOFT,BOM,DRW,QST,HISTORICAL', limit: 1000 });
       const responseData = (res as { data: { data: ApplicationRecord[] } }).data;
       setAllQtdRecords(responseData?.data || []);
     } catch (err) {
       console.error('加载历史记录失败', err);
     }
   };
-
-  useEffect(() => {
-    loadRecords();
-  }, [filterProject, filterApplicant, filterCategory, pagination.page]);
 
   useEffect(() => {
     loadAllQtdRecords();
@@ -115,11 +112,11 @@ export function TechnicalDocumentPage() {
     loadAllQtdRecords();
   };
 
-  const loadRecords = async () => {
+  const loadRecords = useCallback(async () => {
     setLoading(true);
     try {
       type ApplicationAPIParams = Parameters<typeof applicationAPI.getAll>[0];
-      const params: ApplicationAPIParams = { number_type: 'QTD,DHF,SOP,SOFT,BOM,DRW,HISTORICAL', page: pagination.page, limit: pagination.limit };
+      const params: ApplicationAPIParams = { number_type: 'QTD,DHF,SOP,SOFT,BOM,DRW,QST,HISTORICAL', page: pagination.page, limit: pagination.limit };
       if (filterProject.trim()) {
         params.project_code = filterProject.trim();
       }
@@ -136,14 +133,20 @@ export function TechnicalDocumentPage() {
       const res = await applicationAPI.getAll(params);
       const responseData = (res as { data: { data: ApplicationRecord[]; pagination: typeof pagination } }).data;
       setRecords(responseData?.data || []);
-      setPagination(responseData?.pagination || pagination);
+      if (responseData?.pagination) {
+        setPagination(responseData.pagination);
+      }
     } catch (err) {
       console.error('加载技术文件记录失败', err);
       setRecords([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterProject, filterApplicant, filterCategory, pagination.page, pagination.limit]);
+
+  useEffect(() => {
+    loadRecords();
+  }, [loadRecords]);
 
   const handleFilterSearch = () => {
     setPagination(prev => ({ ...prev, page: 1 }));

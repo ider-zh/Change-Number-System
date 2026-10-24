@@ -56,6 +56,19 @@ db.exec(`
   );
 `);
 
+// 其他质量体系文件使用独立的关键代号列表，CM 为固定默认选项。
+const qualitySystemCodesTableExists = !!db.prepare(
+  "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'quality_system_codes'"
+).get();
+db.exec(`
+  CREATE TABLE IF NOT EXISTS quality_system_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  INSERT OR IGNORE INTO quality_system_codes (code) VALUES ('CM');
+`);
+
 // 迁移: 移除 number_types.type_name 的 NOT NULL 约束
 // SQLite 不支持直接 DROP CONSTRAINT, 需要重建表
 function migrateNumberTypes() {
@@ -203,6 +216,16 @@ function migrateApplicationsCategoryTable() {
 }
 
 migrateApplicationsCategoryTable();
+
+// 仅首次建表时导入旧版 QST 代号，避免重启后恢复管理员已删除的代号。
+if (!qualitySystemCodesTableExists) {
+  db.exec(`
+    INSERT OR IGNORE INTO quality_system_codes (code)
+    SELECT DISTINCT UPPER(TRIM(project_code))
+    FROM applications
+    WHERE category = 'OTHER_QUALITY_SYSTEM' AND TRIM(project_code) != '';
+  `);
+}
 
 // 迁移: 为 applications 表新增 source_number 列（记录表单派生源文件编号）
 function migrateApplicationsSourceNumber() {

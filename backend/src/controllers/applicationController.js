@@ -1,6 +1,7 @@
 const { getDatabase } = require('../db/connection');
 const { successResponse, errorResponse } = require('../middlewares/response');
 const { getClientIP } = require('../utils/ip');
+const { normalizeQualitySystemCode } = require('../utils/qualitySystemCode');
 
 // 取号冷却时间（秒），管理员可配置
 let COOLDOWN_SECONDS = 10;
@@ -23,12 +24,12 @@ function getCooldownSeconds() {
 
 /**
  * 技术文件取号类别规则表
- * middleType: 'project' 需要项目代号；'fixed' 使用固定中间段 fixedMiddle；'subcategory' 使用子类型作为中间段
+ * middleType: 'project' 需要项目代号；'keyword' 需要技术文件关键代号；'fixed' 使用固定中间段 fixedMiddle；'subcategory' 使用子类型作为中间段
  * subCategory: 存入 sub_category 列，用于展示与部分编号格式
- * serialWidth: 流水号补零宽度
- * serialStart: 流水号起始值（程序类从 1000000 起）
+ * serialWidth: 流水号补零宽度（QST 超过 9999 后扩充到 6 位）
+ * serialStart: 流水号起始值（程序类从 1000000 起，质量体系文件从 1001 起）
  * serialPrefix: 流水号前缀（程序类为 'S'）
- * serialGroup: 'COMMON' 与多个技术文件类别共用 6 位流水号；'PROGRAM' 程序类单独维护
+ * serialGroup: 'COMMON' 与多个技术文件类别共用 6 位流水号；'PROGRAM' 和 'QST' 分别单独维护
  */
 const CATEGORY_RULES = {
   PRODUCT_TECH:  { numberType: 'QTD',  middleType: 'project',    subCategory: null,   serialWidth: 6, serialStart: 1, serialGroup: 'COMMON' },
@@ -39,6 +40,7 @@ const CATEGORY_RULES = {
   BOM:           { numberType: 'BOM',  middleType: 'project',    subCategory: null,   serialWidth: 6, serialStart: 1, serialGroup: 'COMMON' },
   BOM_PCBA:      { numberType: 'BOM',  middleType: 'subcategory', subCategory: 'PCBA', serialWidth: 6, serialStart: 1, serialGroup: 'COMMON' },
   OTHER_DRAWING: { numberType: 'DRW',  middleType: 'fixed',      fixedMiddle: 'CM', subCategory: null,   serialWidth: 6, serialStart: 1, serialGroup: 'COMMON' },
+  OTHER_QUALITY_SYSTEM: { numberType: 'QST', middleType: 'keyword', subCategory: null, serialWidth: 4, serialStart: 1001, serialGroup: 'QST' },
 };
 
 /**
@@ -53,7 +55,7 @@ const RECORD_FORM_SERIAL_START = 100;
 
 /**
  * 按规则生成流水号
- * COMMON 组跨 QTD/DHF/SOP/BOM/DRW 等 number_type 共用最大流水号；PROGRAM 组仅 SOFT 自增。
+ * COMMON 组跨 QTD/DHF/SOP/BOM/DRW 共用最大流水号；PROGRAM 和 QST 各自独立自增。
  */
 function generateSerialNumberByRule(db, rule) {
   const serialGroup = rule.serialGroup;
@@ -77,6 +79,13 @@ function generateSerialNumberByRule(db, rule) {
     return Math.max((result.maxSerial || 0) + 1, serialStart);
   }
 
+  if (serialGroup === 'QST') {
+    const result = db.prepare(
+      'SELECT MAX(serial_number) as maxSerial FROM applications WHERE number_type = ?'
+    ).get('QST');
+    return Math.max((result.maxSerial || 0) + 1, serialStart);
+  }
+
   return serialStart;
 }
 
@@ -97,7 +106,8 @@ function generateSerialNumber(db, numberType, projectCode, subCategory) {
  * 按规则格式化流水号
  */
 function formatSerialByRule(serial, rule) {
-  const padded = String(serial).padStart(rule.serialWidth, '0');
+  const width = rule.serialGroup === 'QST' && serial > 9999 ? 6 : rule.serialWidth;
+  const padded = String(serial).padStart(width, '0');
   return rule.serialPrefix ? `${rule.serialPrefix}${padded}` : padded;
 }
 
@@ -212,6 +222,15 @@ async function createApplication(req, res) {
       if (rule.middleType === 'fixed') {
         // 固定中间段（通用技术 CM / 其他图纸 CM），不校验项目
         finalProjectCode = rule.fixedMiddle;
+      } else if (rule.middleType === 'keyword') {
+        finalProjectCode = normalizeQualitySystemCode(project_code || 'CM');
+        if (!finalProjectCode) {
+          return errorResponse(res, 400, '关键代号只能包含英文字母、数字和连接符');
+        }
+        const qualityCode = db.prepare('SELECT id FROM quality_system_codes WHERE code = ?').get(finalProjectCode);
+        if (!qualityCode) {
+          return errorResponse(res, 400, '关键代号不存在');
+        }
       } else {
         // 项目类及子类型中间段（project / subcategory）均需项目代号，但 subcategory 格式不显示项目代号
         if (!project_code || !project_code.trim()) {

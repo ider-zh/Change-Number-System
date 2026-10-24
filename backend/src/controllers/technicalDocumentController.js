@@ -1,6 +1,66 @@
 const { getDatabase } = require('../db/connection');
 const { successResponse, errorResponse } = require('../middlewares/response');
 const { getClientIP } = require('../utils/ip');
+const { normalizeQualitySystemCode } = require('../utils/qualitySystemCode');
+
+function getQualitySystemCodes(req, res) {
+  try {
+    const codes = getDatabase().prepare("SELECT * FROM quality_system_codes ORDER BY CASE WHEN code = 'CM' THEN 0 ELSE 1 END, code").all();
+    return successResponse(res, codes);
+  } catch (error) {
+    console.error('Get quality system codes error:', error);
+    return errorResponse(res, 500, '获取关键代号失败');
+  }
+}
+
+function createQualitySystemCode(req, res) {
+  const code = normalizeQualitySystemCode(req.body?.code);
+  if (!code) return errorResponse(res, 400, '关键代号只能包含英文字母、数字和连接符');
+
+  try {
+    const db = getDatabase();
+    const result = db.prepare('INSERT INTO quality_system_codes (code) VALUES (?)').run(code);
+    const created = db.prepare('SELECT * FROM quality_system_codes WHERE id = ?').get(result.lastInsertRowid);
+    return successResponse(res, created, '关键代号创建成功');
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') return errorResponse(res, 409, '关键代号已存在');
+    console.error('Create quality system code error:', error);
+    return errorResponse(res, 500, '创建关键代号失败');
+  }
+}
+
+function updateQualitySystemCode(req, res) {
+  const code = normalizeQualitySystemCode(req.body?.code);
+  if (!code) return errorResponse(res, 400, '关键代号只能包含英文字母、数字和连接符');
+
+  try {
+    const db = getDatabase();
+    const existing = db.prepare('SELECT * FROM quality_system_codes WHERE id = ?').get(req.params.id);
+    if (!existing) return errorResponse(res, 404, '关键代号不存在');
+    if (existing.code === 'CM') return errorResponse(res, 400, '默认关键代号 CM 不可修改');
+    db.prepare('UPDATE quality_system_codes SET code = ? WHERE id = ?').run(code, req.params.id);
+    const updated = db.prepare('SELECT * FROM quality_system_codes WHERE id = ?').get(req.params.id);
+    return successResponse(res, updated, '关键代号更新成功');
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') return errorResponse(res, 409, '关键代号已存在');
+    console.error('Update quality system code error:', error);
+    return errorResponse(res, 500, '更新关键代号失败');
+  }
+}
+
+function deleteQualitySystemCode(req, res) {
+  try {
+    const db = getDatabase();
+    const existing = db.prepare('SELECT * FROM quality_system_codes WHERE id = ?').get(req.params.id);
+    if (!existing) return errorResponse(res, 404, '关键代号不存在');
+    if (existing.code === 'CM') return errorResponse(res, 400, '默认关键代号 CM 不可删除');
+    db.prepare('DELETE FROM quality_system_codes WHERE id = ?').run(req.params.id);
+    return successResponse(res, null, '关键代号删除成功');
+  } catch (error) {
+    console.error('Delete quality system code error:', error);
+    return errorResponse(res, 500, '删除关键代号失败');
+  }
+}
 
 /**
  * 获取技术文件关键字列表
@@ -195,6 +255,10 @@ async function importApplications(req, res) {
 }
 
 module.exports = {
+  getQualitySystemCodes,
+  createQualitySystemCode,
+  updateQualitySystemCode,
+  deleteQualitySystemCode,
   getKeywords,
   createKeyword,
   updateKeyword,

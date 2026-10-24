@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { projectAPI, applicationAPI, settingsAPI } from '../services';
+import { projectAPI, applicationAPI, settingsAPI, technicalDocumentAPI } from '../services';
+import type { QualitySystemCode } from '../services';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { FilterableProjectSelector } from './FilterableProjectSelector';
 import { CapVerification } from './CapVerification';
 import { Copy, Check } from 'lucide-react';
+import { TECH_CATEGORIES, BOM_SUBTYPES } from './technicalDocumentConstants';
 
 interface ProjectItem {
   id: number;
@@ -19,27 +21,6 @@ interface TechnicalDocumentFormProps {
   onApplicationSubmitted?: () => void;
 }
 
-// 技术文件取号类别（7 类 + 记录表单）
-export const TECH_CATEGORIES = [
-  { code: 'PRODUCT_TECH', name: '产品技术文件', format: 'QTD-项目代号-6位流水号', needProject: true, hint: '工艺流程图、工艺规程、使用说明书属于此类' },
-  { code: 'GENERAL_TECH', name: '通用技术', format: 'QTD-CM-6位流水号', needProject: true, hint: '通用技术指南、技术规范、规定、标准属于此类' },
-  { code: 'DHF', name: 'DHF', format: 'DHF-项目代号-6位流水号', needProject: true, hint: 'M0-M5开发过程文件，如《产品需求规格说明书》《系统设计方案》等属于此类' },
-  { code: 'SOP', name: 'SOP', format: 'SOP-项目代号-6位流水号', needProject: true, hint: '产品装配/调试/检验/售后/来料检验/设备操作规程/治具操作规程等属于此类' },
-  { code: 'PROGRAM', name: '程序', format: 'SOFT-项目代号-S1+6位流水号', needProject: true, hint: '固件、应用软件、工具驱动、配置参数、软件清单等属于此类' },
-  { code: 'BOM', name: 'BOM', format: 'BOM-子类型-项目代号-6位流水号', needProject: true, hint: '仪器、模块、PCBA、软件等属于此类', hasSubType: true },
-  { code: 'OTHER_DRAWING', name: '其他图纸', format: 'DRW-CM-6位流水号', needProject: false, hint: '指除机械图纸、线材图纸外，不在规范内的图纸' },
-  { code: 'RECORD_FORM', name: '记录表单', format: '源文件编号-R001', needProject: false, hint: '从产品技术文件/通用技术/DHF/SOP 类文件中引出记录表单，编号为 源文件编号-R001' },
-] as const;
-
-// 记录表单可派生的源文件类别
-export const RECORD_FORM_SOURCE_TYPES = ['PRODUCT_TECH', 'GENERAL_TECH', 'DHF', 'SOP'];
-
-// BOM 子类型（2 类）
-export const BOM_SUBTYPES = [
-  { code: 'BOM', name: '仪器/模块/软件清单', format: 'BOM-项目代号-6位流水号', legacyCodes: ['BOM_ASSE', 'BOM_SOFT'] as string[] },
-  { code: 'BOM_PCBA', name: 'PCBA', format: 'BOM-PCBA-6位流水号', legacyCodes: [] as string[] },
-] as const;
-
 export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocumentFormProps) {
   const [formData, setFormData] = useState({
     applicant_name: '',
@@ -50,6 +31,7 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
     source_number: '',
   });
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [qualityCodes, setQualityCodes] = useState<QualitySystemCode[]>([{ id: 0, code: 'CM', created_at: '' }]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +46,7 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
 
   const selectedCategory = TECH_CATEGORIES.find(c => c.code === formData.category);
   const needProject = selectedCategory?.needProject ?? false;
+  const needKeyword = formData.category === 'OTHER_QUALITY_SYSTEM';
 
   const handleCaptchaReset = useCallback(() => {
     setCapToken(null);
@@ -76,6 +59,15 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
       setProjects(rawProjects);
     } catch (err) {
       console.error('加载项目失败', err);
+    }
+  }, []);
+
+  const loadQualityCodes = useCallback(async () => {
+    try {
+      const res = await technicalDocumentAPI.getQualitySystemCodes();
+      setQualityCodes((res as { data: QualitySystemCode[] }).data || []);
+    } catch (err) {
+      console.error('加载关键代号失败', err);
     }
   }, []);
 
@@ -94,7 +86,8 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
   useEffect(() => {
     loadProjects();
     loadCooldown();
-  }, [loadProjects, loadCooldown]);
+    loadQualityCodes();
+  }, [loadProjects, loadCooldown, loadQualityCodes]);
 
   const startCooldown = useCallback((seconds?: number) => {
     const cooldownTime = seconds || cooldownConfig;
@@ -144,7 +137,7 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
       }
 
       startCooldown();
-      setFormData(prev => ({ ...prev, project_code: '', source_number: '' }));
+      setFormData(prev => ({ ...prev, project_code: prev.category === 'OTHER_QUALITY_SYSTEM' ? 'CM' : '', source_number: '' }));
       setCapToken(null);
       setCaptchaKey(prev => prev + 1);
       setDupConflict(null);
@@ -191,6 +184,10 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
       setError('请选择项目代号');
       return;
     }
+    if (needKeyword && !formData.project_code.trim()) {
+      setError('请选择关键代号');
+      return;
+    }
     if (formData.category === 'RECORD_FORM' && !formData.source_number.trim()) {
       setError('请填写源文件编号');
       return;
@@ -206,7 +203,7 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
 
     // BOM 类别提交其子类型 code，其余提交类别 code 本身
     const finalCategory = formData.category === 'BOM' ? formData.bomSubType : formData.category;
-    const projectCode = needProject ? formData.project_code.trim() : '';
+    const projectCode = needProject || needKeyword ? formData.project_code.trim() : '';
     const payload: Record<string, unknown> = {
       applicant_name: formData.applicant_name.trim(),
       document_name: formData.document_name.trim(),
@@ -234,7 +231,7 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-slate-900">技术文件编号申请</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">DHF / SOP / BOM / 程序 / 产品技术文件 / 通用技术 / 其他图纸</p>
+            <p className="text-sm text-muted-foreground mt-1">DHF / SOP / BOM / 程序 / 产品技术文件 / 通用技术 / 其他图纸 / 其他质量体系文件</p>
           </div>
         </div>
       </CardHeader>
@@ -327,7 +324,10 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
                   key={cat.code}
                   type="button"
                   className={`rounded-xl border p-3 text-left transition ${formData.category === cat.code ? 'border-sky-500 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-sky-300'}`}
-                  onClick={() => setFormData(prev => ({ ...prev, category: cat.code, project_code: '' }))}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, category: cat.code, project_code: cat.code === 'OTHER_QUALITY_SYSTEM' ? 'CM' : '' }));
+                    if (cat.code === 'OTHER_QUALITY_SYSTEM') loadQualityCodes();
+                  }}
                 >
                   <div className="text-sm font-semibold">{cat.name}</div>
                   <div className="text-[11px] text-slate-500 mt-1 break-all">{cat.format}</div>
@@ -374,6 +374,24 @@ export function TechnicalDocumentForm({ onApplicationSubmitted }: TechnicalDocum
                 onChange={(code) => setFormData(prev => ({ ...prev, project_code: code }))}
                 placeholder="请选择项目代号"
               />
+            </div>
+          )}
+
+          {needKeyword && (
+            <div className="space-y-2 p-4 rounded-2xl border border-slate-200 bg-white">
+              <label htmlFor="quality-keyword" className="text-sm font-semibold flex items-center gap-2">
+                <span className="text-lg">🔑</span>
+                关键代号
+                <span className="text-destructive">*</span>
+              </label>
+              <select
+                id="quality-keyword"
+                value={formData.project_code}
+                onChange={(e) => setFormData(prev => ({ ...prev, project_code: e.target.value }))}
+                className="w-full rounded-md border-2 border-slate-200 bg-white px-3 py-2 text-sm focus:border-sky-400"
+              >
+                {qualityCodes.map(({ id, code }) => <option key={id} value={code}>{code}</option>)}
+              </select>
             </div>
           )}
 

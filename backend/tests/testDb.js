@@ -58,6 +58,15 @@ function initTestSchema(db) {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS quality_system_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    INSERT OR IGNORE INTO quality_system_codes (code) VALUES ('CM');
+  `);
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS applications (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       applicant_name TEXT NOT NULL,

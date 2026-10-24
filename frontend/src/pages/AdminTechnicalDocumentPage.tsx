@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { technicalDocumentAPI, projectAPI, applicationAPI, adminAPI } from '../services';
-import type { TechnicalDocumentKeyword, Project, Application } from '../services';
+import type { TechnicalDocumentKeyword, QualitySystemCode, Project, Application } from '../services';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -36,6 +36,7 @@ const CATEGORY_OPTIONS: { value: string; label: string }[] = [
   { value: 'BOM_PCBA', label: 'BOM/PCBA' },
   { value: 'BOM_SOFT', label: 'BOM/软件清单' },
   { value: 'OTHER_DRAWING', label: '其他图纸' },
+  { value: 'OTHER_QUALITY_SYSTEM', label: '其他质量体系文件' },
   { value: 'RECORD_FORM', label: '记录表单' },
 ];
 
@@ -66,6 +67,11 @@ export function AdminTechnicalDocumentPage() {
 
   // 关键字/项目管理状态
   const [keywords, setKeywords] = useState<TechnicalDocumentKeyword[]>([]);
+  const [qualityCodes, setQualityCodes] = useState<QualitySystemCode[]>([]);
+  const [newQualityCode, setNewQualityCode] = useState('');
+  const [editingQualityCode, setEditingQualityCode] = useState<QualitySystemCode | null>(null);
+  const [qualityCodeDraft, setQualityCodeDraft] = useState('');
+  const [qualityCodeBusy, setQualityCodeBusy] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectCode, setSelectedProjectCode] = useState('');
   const [importerName, setImporterName] = useState('');
@@ -99,14 +105,9 @@ export function AdminTechnicalDocumentPage() {
       return;
     }
     loadKeywords();
+    loadQualityCodes();
     loadProjects();
   }, [navigate]);
-
-  useEffect(() => {
-    if (activeTab === 'qtd' || activeTab === 'historical') {
-      loadApplications();
-    }
-  }, [activeTab, pagination.page, filters]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -140,12 +141,70 @@ export function AdminTechnicalDocumentPage() {
     }
   };
 
+  const loadQualityCodes = async () => {
+    try {
+      const res = await technicalDocumentAPI.getQualitySystemCodes();
+      setQualityCodes((res as { data: QualitySystemCode[] }).data || []);
+    } catch (err) {
+      console.error('加载质量体系文件关键代号失败', err);
+    }
+  };
+
+  const qualityCodeError = (err: unknown) => {
+    const response = err as { response?: { data?: { message?: string } } };
+    setError(response.response?.data?.message || '保存关键代号失败');
+  };
+
+  const handleCreateQualityCode = async () => {
+    if (!newQualityCode.trim()) return;
+    setQualityCodeBusy(true);
+    setError(null);
+    try {
+      await technicalDocumentAPI.createQualitySystemCode(newQualityCode.trim());
+      setNewQualityCode('');
+      await loadQualityCodes();
+    } catch (err) {
+      qualityCodeError(err);
+    } finally {
+      setQualityCodeBusy(false);
+    }
+  };
+
+  const handleUpdateQualityCode = async () => {
+    if (!editingQualityCode || !qualityCodeDraft.trim()) return;
+    setQualityCodeBusy(true);
+    setError(null);
+    try {
+      await technicalDocumentAPI.updateQualitySystemCode(editingQualityCode.id, qualityCodeDraft.trim());
+      setEditingQualityCode(null);
+      await loadQualityCodes();
+    } catch (err) {
+      qualityCodeError(err);
+    } finally {
+      setQualityCodeBusy(false);
+    }
+  };
+
+  const handleDeleteQualityCode = async (item: QualitySystemCode) => {
+    if (!confirm(`确定删除关键代号 ${item.code} 吗？`)) return;
+    setQualityCodeBusy(true);
+    setError(null);
+    try {
+      await technicalDocumentAPI.deleteQualitySystemCode(item.id);
+      await loadQualityCodes();
+    } catch (err) {
+      qualityCodeError(err);
+    } finally {
+      setQualityCodeBusy(false);
+    }
+  };
+
   const loadApplications = useCallback(async () => {
     setAppLoading(true);
     try {
       type ApplicationAPIParams = Parameters<typeof applicationAPI.getAll>[0];
       const params: ApplicationAPIParams = {
-        number_type: activeTab === 'qtd' ? 'QTD,DHF,SOP,SOFT,BOM,DRW' : 'HISTORICAL',
+        number_type: activeTab === 'qtd' ? 'QTD,DHF,SOP,SOFT,BOM,DRW,QST' : 'HISTORICAL',
         page: pagination.page,
         limit: pagination.limit,
       };
@@ -157,7 +216,9 @@ export function AdminTechnicalDocumentPage() {
       const res = await applicationAPI.getAll(params);
       const data = (res as { data: { data: ApplicationRecord[]; pagination: typeof pagination } }).data;
       setApplications(data?.data || []);
-      setPagination(data?.pagination || pagination);
+      if (data?.pagination) {
+        setPagination(data.pagination);
+      }
     } catch (err) {
       console.error('加载申请记录失败', err);
       setApplications([]);
@@ -165,6 +226,12 @@ export function AdminTechnicalDocumentPage() {
       setAppLoading(false);
     }
   }, [activeTab, filters, pagination.page, pagination.limit]);
+
+  useEffect(() => {
+    if (activeTab === 'qtd' || activeTab === 'historical') {
+      loadApplications();
+    }
+  }, [activeTab, loadApplications]);
 
   const handleTabChange = (tab: AdminTechTab) => {
     setActiveTab(tab);
@@ -533,7 +600,7 @@ export function AdminTechnicalDocumentPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">技术文件管理</h2>
-            <p className="mt-2 text-sm text-muted-foreground">管理技术文件申请记录（DHF/SOP/BOM/程序/产品技术文件/通用技术/其他图纸）、历史文档导入记录、关键字及批量导入。</p>
+            <p className="mt-2 text-sm text-muted-foreground">管理技术文件申请记录（DHF/SOP/BOM/程序/产品技术文件/通用技术/其他图纸/其他质量体系文件）、历史文档导入记录、关键字及批量导入。</p>
           </div>
         </div>
 
@@ -542,7 +609,7 @@ export function AdminTechnicalDocumentPage() {
           {[
             { key: 'qtd', label: '技术文件申请记录' },
             { key: 'historical', label: '历史文档记录' },
-            { key: 'management', label: '关键字/导入管理' },
+            { key: 'management', label: '关键代号/关键字/导入管理' },
           ].map(tab => (
             <button
               key={tab.key}
@@ -568,6 +635,53 @@ export function AdminTechnicalDocumentPage() {
 
         {activeTab === 'management' && (
           <>
+            <Card>
+              <CardHeader>
+                <CardTitle>其他质量体系文件关键代号</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    aria-label="新增关键代号"
+                    placeholder="新增关键代号，如 QP04"
+                    value={newQualityCode}
+                    onChange={(e) => setNewQualityCode(e.target.value)}
+                    className="max-w-xs"
+                  />
+                  <Button loading={qualityCodeBusy} onClick={handleCreateQualityCode}>新增关键代号</Button>
+                </div>
+                <p className="text-sm text-muted-foreground">CM 为默认关键代号。新增的代号会出现在技术文件编号申请页。</p>
+                <div className="flex flex-wrap gap-2">
+                  {qualityCodes.map(item => (
+                    <div key={item.id} className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
+                      {editingQualityCode?.id === item.id ? (
+                        <>
+                          <Input
+                            aria-label="编辑关键代号"
+                            value={qualityCodeDraft}
+                            onChange={(e) => setQualityCodeDraft(e.target.value)}
+                            className="w-32"
+                          />
+                          <Button size="sm" loading={qualityCodeBusy} onClick={handleUpdateQualityCode}>保存</Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingQualityCode(null)}>取消</Button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-semibold">{item.code}</span>
+                          {item.code !== 'CM' && (
+                            <>
+                              <Button size="sm" variant="outline" onClick={() => { setEditingQualityCode(item); setQualityCodeDraft(item.code); }}>编辑</Button>
+                              <Button size="sm" variant="destructive" disabled={qualityCodeBusy} onClick={() => handleDeleteQualityCode(item)}>删除</Button>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {showCreateForm && (
               <Card>
                 <CardHeader>
