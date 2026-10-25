@@ -1,227 +1,101 @@
-# 自动取号系统 (Change Number System)
+# 自动取号系统
 
-一个基于 React + TypeScript + Express + SQLite 的自动取号管理系统。
+基于 React、Express 和 SQLite 的编号申请与管理系统，覆盖变更编号、技术文件编号、申请记录及管理员审核。
 
-版本变更见 [修订记录](CHANGELOG.md)。
+## 功能概览
 
-## 技术栈
+- 申请 CR、DCP、CN 等变更编号，以及 QTD、DHF、SOP、SOFT、BOM、DRW、QST 等技术文件编号。各类别的流水号规则由后端决定，不使用统一的位数或起始值。
+- 查询申请记录和变更进度；按项目、编号类型等条件筛选，并导出记录。
+- 维护项目代号、编号类型、技术文件关键代号及表单模板；管理员可以审核申请和管理数据。
+- 下载 DCP 相关表单，并导入变更进度记录。
 
-**前端:**
-- React 18 + TypeScript
-- Vite
-- React Router
-- Axios
-- Zod (验证)
+## 快速开始
 
-**后端:**
-- Node.js + Express
-- better-sqlite3 (WAL 模式)
-- JWT (认证)
-- bcrypt (密码加密)
+### 环境要求
 
-## 功能特性
+- Node.js `^20.19.0` 或 `>=22.12.0`，以及 npm。
+- 一个独立的开发数据库；首次启动时可由后端自动创建。
 
-- ✅ 用户编号申请 (自动生成流水号)
-- ✅ 项目代号管理 (预设 + 用户申请)
-- ✅ 编号类型管理 (预设 + 用户申请)
-  - 预设类型: CR (Change Request), DCP (Design Change Proposal), CN (Change Notice), TD (Technical Document)
-  - 编号格式: `{类型}-{项目代号}-{4位流水号}` (例如: `TD-ALPHA01-0001`)
-- ✅ 管理员审核机制
-- ✅ 申请记录管理 (搜索、过滤、分页)
-- ✅ 数据导出 (CSV)
-- ✅ IP 地址追踪 (仅管理员可见)
-- ✅ 权限控制 (普通用户 vs 管理员)
+### 安装与配置
 
-## 安装和运行
+在仓库根目录执行：
 
-### 1. 安装依赖
-
-```bash
-# 安装根目录依赖
-npm install
-
-# 安装前端依赖
-cd frontend && npm install
-
-# 安装后端依赖
-cd backend && npm install
-```
-
-### 2. 配置环境变量
-
-```bash
-# 复制示例配置
+~~~bash
+npm ci --include=dev
+(cd frontend && npm ci --include=dev)
+(cd backend && npm ci --include=dev)
 cp backend/.env.example backend/.env
+~~~
 
-# 编辑 .env 文件,修改管理员密码等配置
-```
+编辑 `backend/.env`，为开发环境设置 `JWT_SECRET`、`ADMIN_PASSWORD`，并确认 `DB_PATH` 指向开发数据库。`.env`、数据库文件及 WAL/SHM 文件不得提交到 Git。
 
-### 3. 启动开发服务器
+### 启动与访问
 
-```bash
-# 同时启动前后端 (推荐)
+~~~bash
 npm run dev
+~~~
 
-# 或分别启动
-npm run dev:frontend  # 前端: http://localhost:3000
-npm run dev:backend   # 后端: http://localhost:3001
-```
+默认从 [http://localhost:3000](http://localhost:3000) 访问前端，后端 API 使用 3001 端口；管理员入口是 [http://localhost:3000/admin/login](http://localhost:3000/admin/login)。也可以分别运行 `npm run dev:frontend` 和 `npm run dev:backend`。
 
-### 4. 访问应用
+Vite 将 `/api` 和 `/cap` 代理到 `http://localhost:3001`。如果后端使用其他端口，在启动前端时设置 `DEV_BACKEND_TARGET`，例如：
 
-- 前端: http://localhost:3000
-- 后端 API: http://localhost:3001
-- 管理员登录: http://localhost:3000/admin/login
+~~~bash
+DEV_BACKEND_TARGET=http://127.0.0.1:3002 npm run dev:frontend
+~~~
 
-## 默认管理员账号
+监听地址以 `frontend/vite.config.ts` 和后端 `HOST` 配置为准。使用含真实用户数据的生产副本开发时，应将两端都限制在 `127.0.0.1`。
 
-- 用户名: `admin`
-- 密码: `Aa123456` (可在 `.env` 中修改)
+## 配置与数据
 
-## API 文档
+| 变量 | 用途 |
+| --- | --- |
+| `PORT`、`HOST` | 后端监听端口与地址；未设置时分别为 3001 和 `0.0.0.0`。 |
+| `DB_PATH` | 实际使用的 SQLite 文件路径；未设置时为 `backend/data/app.db`。 |
+| `JWT_SECRET` | 管理员登录令牌的签名密钥。 |
+| `ADMIN_PASSWORD` | 空数据库首次创建 `admin` 账号时使用的密码。已有管理员账号不会因修改此变量而重置密码。 |
+| `NODE_ENV` | 控制开发/生产运行行为；不会自动切换数据库。 |
+| `DEV_BACKEND_TARGET` | Vite 开发代理的后端地址，默认 `http://localhost:3001`。 |
 
-### 项目代号
+SQLite 使用 WAL 模式。开发和生产数据库由 `DB_PATH` 区分，Git 分支或 `NODE_ENV` 不能代替数据库路径检查。当前生产实例的数据库位置、备份与恢复要求见 [DEPLOY.md](DEPLOY.md)。
 
-- `GET /api/projects` - 获取项目列表
-- `POST /api/projects` - 创建项目 (管理员)
-- `PUT /api/projects/:id` - 更新项目 (管理员)
-- `DELETE /api/projects/:id` - 删除项目 (管理员)
-- `POST /api/projects/request` - 申请新项目
-- `PUT /api/projects/:id/review` - 审核项目申请 (管理员)
+## 项目结构
 
-### 编号类型
+| 路径 | 内容 |
+| --- | --- |
+| `frontend/` | React 19、TypeScript、Vite 前端与组件测试。 |
+| `backend/` | Express API、SQLite 数据访问与后端测试。 |
+| `backend/src/routes/` | API 路由定义。 |
+| `scripts/docker/` | 镜像构建和推送脚本。 |
+| `.github/workflows/docker.yml` | CI 测试及镜像构建流程。 |
+| [DEPLOY.md](DEPLOY.md) | 当前生产部署与发布前备份流程。 |
 
-- `GET /api/number-types` - 获取编号类型列表
-- `POST /api/number-types` - 创建编号类型 (管理员)
-- `PUT /api/number-types/:id` - 更新编号类型 (管理员)
-- `DELETE /api/number-types/:id` - 删除编号类型 (管理员)
-- `POST /api/number-types/request` - 申请新编号类型
-- `PUT /api/number-types/:id/review` - 审核编号类型申请 (管理员)
+## 检查命令
 
-### 申请记录
+| 命令 | 用途 |
+| --- | --- |
+| `npm run test:backend` | 运行后端 Jest 测试。 |
+| `cd frontend && npm test -- --run` | 单次运行前端 Vitest 测试；`npm run test:frontend` 会进入监听模式。 |
+| `cd frontend && npm run lint` | 检查前端代码。 |
+| `npm run build:frontend` | 类型检查并构建前端。 |
 
-- `POST /api/applications` - 提交申请
-- `GET /api/applications` - 获取申请列表 (支持分页、搜索、过滤)
-- `GET /api/applications/stats` - 获取统计数据
-- `GET /api/applications/export` - 导出 CSV (管理员)
-- `DELETE /api/applications/:id` - 删除单条申请 (管理员)
-- `DELETE /api/applications` - 批量删除申请 (管理员)
+## API 入口
 
-### 管理员认证
+| 路径 | 主要用途 |
+| --- | --- |
+| `GET /api/health` | 健康检查。 |
+| `/api/applications` | 编号申请、记录查询、统计和管理员导出。 |
+| `/api/projects`、`/api/number-types` | 项目代号和编号类型。 |
+| `/api/technical-documents` | 技术文件关键代号与相关管理接口。 |
+| `/api/change-progress` | 变更进度查询与导入导出。 |
+| `/api/admin` | 登录、登出和密码管理。 |
 
-- `POST /api/admin/login` - 管理员登录
-- `POST /api/admin/logout` - 管理员登出
-
-## 数据库
-
-数据库文件存储在 `backend/data/app.db` (SQLite WAL 模式)
-
-## 测试
-
-```bash
-# 运行后端测试
-npm run test:backend
-
-# 运行前端测试
-npm run test:frontend
-
-# 运行所有测试
-npm test
-```
+各接口的 HTTP 方法及权限要求以 [后端路由](backend/src/routes) 为准。
 
 ## 部署
 
-### Docker 部署 (推荐)
+当前生产服务使用仓库外的 Docker Compose 配置，详见 [DEPLOY.md](DEPLOY.md)。仓库内的 `docker-compose.yml` 和 `docker-compose.prod.yml` 都以生产模式运行，并使用相同的容器名与数据卷；不要把它们当成彼此隔离的开发、生产实例。
 
-#### 使用 Docker Compose (最简单)
-
-```bash
-# 1. 配置环境变量
-cp .env.example .env
-# 编辑 .env 文件，修改必要配置
-
-# 2. 启动应用
-docker-compose up -d
-
-# 3. 访问应用
-# 前端: http://localhost:3000
-# 后端 API: http://localhost:3000/api
-
-# 4. 查看日志
-docker-compose logs -f
-
-# 5. 停止应用
-docker-compose down
-```
-
-#### 手动构建和运行
-
-```bash
-# 构建镜像
-bash scripts/docker/build.sh
-
-# 运行容器
-docker run -d \
-  -p 3000:3001 \
-  --env-file .env \
-  -v sqlite-data:/app/data \
-  --name change-number-system \
-  change-number-system:latest
-
-# 查看容器状态
-docker ps
-
-# 查看日志
-docker logs -f change-number-system
-```
-
-#### 构建和推送到阿里云镜像仓库
-
-```bash
-# 登录到阿里云镜像仓库
-bash scripts/docker/login.sh
-
-# 构建并推送
-bash scripts/docker/build-and-push.sh v1.6.0
-```
-
-### GitHub Actions 配置
-
-推送代码到 main 分支或创建 release 时，会自动构建并推送镜像到阿里云镜像仓库和 GitHub Container Registry。
-
-- 阿里云镜像仓库：使用 `ALiYUN_CR_USERNAME` / `ALIYUN_CR_PASSWORD` 进行登录。
-- GitHub Container Registry：使用默认 `GITHUB_TOKEN` 登录，无需额外秘钥。
-
-需要配置以下内容：
-
-**Variables**（Settings → Secrets and variables → Actions → Variables）：
-| 变量名 | 值 |
-|--------|-----|
-| `DOCKER_REGISTRY` | `crpi-yl4pb9sg5y2myg6f.cn-hangzhou.personal.cr.aliyuncs.com` |
-| `DOCKER_IMAGE_NAME` | `9992099/change_number_system` |
-
-**Secrets**（Settings → Secrets and variables → Actions → Secrets）：
-| 密钥名 | 说明 |
-|--------|------|
-| `ALIYUN_CR_USERNAME` | 阿里云镜像仓库用户名 |
-| `ALIYUN_CR_PASSWORD` | 阿里云镜像仓库密码（或访问凭证） |
-
-### 生产构建
-
-```bash
-npm run build:frontend
-npm run build:backend
-```
-
-### 环境变量配置
-
-生产环境需要配置以下环境变量:
-
-- `PORT` - 后端服务端口 (默认 3001)
-- `DB_PATH` - 数据库文件路径 (默认 ./data/app.db)
-- `JWT_SECRET` - JWT 密钥 (必须修改)
-- `ADMIN_PASSWORD` - 默认管理员密码
-- `NODE_ENV` - 运行环境 (production/development)
+推送到 `main`、推送标签、发布版本或手动触发时，GitHub Actions 会运行检查并构建镜像。配置项为 Actions Variables `DOCKER_REGISTRY`、`DOCKER_IMAGE_NAME`，以及 Secrets `ALIYUN_CR_USERNAME`、`ALIYUN_CR_PASSWORD`。镜像构建完成不等于生产部署；更新容器前必须按 [DEPLOY.md](DEPLOY.md) 生成并校验生产数据库的 SQLite 一致性备份。
 
 ## License
 
