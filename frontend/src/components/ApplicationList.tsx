@@ -116,6 +116,7 @@ export function ApplicationList() {
     applicant_name: '',
     ip_address: ''
   });
+  const [searchText, setSearchText] = useState('');
   const [stats, setStats] = useState<StatsData | null>(null);
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -130,8 +131,10 @@ export function ApplicationList() {
 
   // 搜索防抖 ref
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
   const loadData = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     try {
       // 处理 end_date，添加结束时间 23:59:59
@@ -140,32 +143,34 @@ export function ApplicationList() {
         apiFilters.end_date = apiFilters.end_date + ' 23:59:59';
       }
 
-      const [appsRes, statsRes] = await Promise.all([
-        applicationAPI.getAll({ ...apiFilters, exclude_type: TECH_NUMBER_TYPES.join(','), page: pagination.page, limit: pagination.limit }),
-        applicationAPI.getStats(),
-      ]);
+      const appsRes = await applicationAPI.getAll({ ...apiFilters, exclude_type: TECH_NUMBER_TYPES.join(','), page: pagination.page, limit: pagination.limit });
+      if (requestId !== requestIdRef.current) return;
 
-      setApplications((appsRes as { data: { data: Application[]; pagination: typeof pagination } }).data?.data || []);
-      setPagination((appsRes as { data: { data: Application[]; pagination: typeof pagination } }).data?.pagination || pagination);
-      
-      const rawStats = (statsRes as { data: StatsData }).data || null;
-      if (rawStats) {
-        const filteredByType = (rawStats.byType || []).filter(item => !TECH_NUMBER_TYPES.includes(item.number_type));
-        const techCount = (rawStats.byType || []).filter(item => TECH_NUMBER_TYPES.includes(item.number_type)).reduce((sum, item) => sum + item.count, 0);
-        setStats({
-          ...rawStats,
-          total: Math.max(0, rawStats.total - techCount),
-          byType: filteredByType,
-        });
-      } else {
-        setStats(null);
-      }
+      const responseData = (appsRes as { data: { data: Application[]; pagination: typeof pagination } }).data;
+      setApplications(responseData?.data || []);
+      if (responseData?.pagination) setPagination(responseData.pagination);
     } catch (err) {
-      console.error('加载数据失败', err);
+      if (requestId === requestIdRef.current) console.error('加载数据失败', err);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) setLoading(false);
     }
-  }, [filters.keyword, filters.project_code, filters.number_type, filters.start_date, filters.end_date, filters.applicant_name, filters.ip_address, pagination.page, pagination.limit]);
+  }, [filters, pagination.page, pagination.limit]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const statsRes = await applicationAPI.getStats();
+      const rawStats = (statsRes as { data: StatsData }).data || null;
+      if (!rawStats) {
+        setStats(null);
+        return;
+      }
+      const filteredByType = (rawStats.byType || []).filter(item => !TECH_NUMBER_TYPES.includes(item.number_type));
+      const techCount = (rawStats.byType || []).filter(item => TECH_NUMBER_TYPES.includes(item.number_type)).reduce((sum, item) => sum + item.count, 0);
+      setStats({ ...rawStats, total: Math.max(0, rawStats.total - techCount), byType: filteredByType });
+    } catch (err) {
+      console.error('加载统计数据失败', err);
+    }
+  }, []);
   
   // 加载高级筛选的候选数据
   const loadFilterOptions = useCallback(async () => {
@@ -184,9 +189,12 @@ export function ApplicationList() {
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
+
+  useEffect(() => {
     loadFilterOptions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.keyword, filters.project_code, filters.number_type, filters.start_date, filters.end_date, filters.applicant_name, filters.ip_address, pagination.page, loadFilterOptions]);
+    loadStats();
+  }, [loadFilterOptions, loadStats]);
 
   // 清理搜索防抖
   useEffect(() => {
@@ -194,20 +202,27 @@ export function ApplicationList() {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
       }
+      requestIdRef.current += 1;
     };
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // 重置到第一页
-    setPagination(prev => ({ ...prev, page: 1 }));
-    
     const value = e.target.value;
+    setSearchText(value);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     searchTimeoutRef.current = setTimeout(() => {
-      setFilters(prev => ({ ...prev, keyword: value }));
+      setPagination(prev => prev.page === 1 ? prev : { ...prev, page: 1 });
+      setFilters(prev => prev.keyword === value.trim() ? prev : { ...prev, keyword: value.trim() });
     }, 300);
+  };
+
+  const clearSearch = () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    setSearchText('');
+    setPagination(prev => prev.page === 1 ? prev : { ...prev, page: 1 });
+    setFilters(prev => prev.keyword === '' ? prev : { ...prev, keyword: '' });
   };
 
   const handlePageChange = (newPage: number) => {
@@ -247,6 +262,7 @@ export function ApplicationList() {
       await applicationAPI.batchDelete(selectedIds);
       setSelectedIds([]);
       loadData();
+      loadStats();
     } catch (err) {
       console.error('批量删除失败', err);
     }
@@ -316,13 +332,20 @@ export function ApplicationList() {
         )}
 
         <div className="flex gap-3 mb-6">
-          <Input
-            type="text"
-            placeholder="搜索申请人/项目/编号..."
-            value={filters.keyword}
-            onChange={handleSearch}
-            className="flex-1"
-          />
+          <div className="relative flex-1 min-w-0">
+            <Input
+              type="text"
+              placeholder="搜索申请人/项目/编号..."
+              aria-label="搜索申请记录"
+              value={searchText}
+              onChange={handleSearch}
+              onKeyDown={(e) => { if (e.key === 'Escape') clearSearch(); }}
+              className="w-full pr-9"
+            />
+            {searchText && (
+              <button type="button" aria-label="清除搜索" onClick={clearSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground px-1">×</button>
+            )}
+          </div>
           <Button variant="outline" size="sm" onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}>
             {showAdvancedFilters ? '收起筛选' : '高级筛选'}
           </Button>

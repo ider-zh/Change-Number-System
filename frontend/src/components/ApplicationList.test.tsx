@@ -114,6 +114,66 @@ describe('ApplicationList 组件测试', () => {
     });
   });
 
+  it('连续输入时应立即显示完整关键词', () => {
+    render(<ApplicationList />);
+
+    const searchInput = screen.getByPlaceholderText('搜索申请人/项目/编号...') as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: '张' } });
+    expect(searchInput.value).toBe('张');
+
+    fireEvent.change(searchInput, { target: { value: '张三' } });
+    expect(searchInput.value).toBe('张三');
+  });
+
+  it('搜索时只刷新申请记录，不重复加载统计和筛选选项', async () => {
+    render(<ApplicationList />);
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(screen.getByPlaceholderText('搜索申请人/项目/编号...'), { target: { value: '张三' } });
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ keyword: '张三' })
+    ));
+
+    expect(services.applicationAPI.getStats).toHaveBeenCalledTimes(1);
+    expect(services.projectAPI.getAll).toHaveBeenCalledTimes(1);
+    expect(services.numberTypeAPI.getAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('可以立即清除搜索并恢复全部记录', async () => {
+    render(<ApplicationList />);
+    const searchInput = screen.getByPlaceholderText('搜索申请人/项目/编号...') as HTMLInputElement;
+    fireEvent.change(searchInput, { target: { value: '张三' } });
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenCalledWith(expect.objectContaining({ keyword: '张三' })));
+
+    fireEvent.click(screen.getByRole('button', { name: '清除搜索' }));
+    expect(searchInput.value).toBe('');
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenLastCalledWith(expect.objectContaining({ keyword: '' })));
+  });
+
+  it('旧搜索请求后返回时不应覆盖新搜索结果', async () => {
+    let resolveOld!: (value: { data: { data: typeof mockApplications; pagination: typeof mockPagination } }) => void;
+    const oldRequest = new Promise<{ data: { data: typeof mockApplications; pagination: typeof mockPagination } }>(resolve => { resolveOld = resolve; });
+    vi.mocked(services.applicationAPI.getAll).mockImplementation(params => {
+      if (params.keyword === '旧') return oldRequest;
+      if (params.keyword === '新') return Promise.resolve({ data: { data: [mockApplications[1]], pagination: mockPagination } });
+      return Promise.resolve({ data: { data: mockApplications, pagination: mockPagination } });
+    });
+
+    render(<ApplicationList />);
+    const searchInput = screen.getByPlaceholderText('搜索申请人/项目/编号...');
+    fireEvent.change(searchInput, { target: { value: '旧' } });
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenCalledWith(expect.objectContaining({ keyword: '旧' })));
+
+    fireEvent.change(searchInput, { target: { value: '新' } });
+    await waitFor(() => expect(services.applicationAPI.getAll).toHaveBeenCalledWith(expect.objectContaining({ keyword: '新' })));
+    await waitFor(() => expect(screen.queryByText('张三')).not.toBeInTheDocument());
+    resolveOld({ data: { data: [mockApplications[0]], pagination: mockPagination } });
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(screen.getAllByText('李四')[0]).toBeInTheDocument();
+    expect(screen.queryByText('张三')).not.toBeInTheDocument();
+  });
+
   it('应该显示高级筛选面板', async () => {
     render(<ApplicationList />);
 
