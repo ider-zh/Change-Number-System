@@ -138,6 +138,68 @@ export const applicationAPI = {
   },
 };
 
+export interface FixtureKind {
+  id: number;
+  type_code: 'FT' | 'AM' | 'TL';
+  project_code: string;
+  base_number: string;
+  label: string;
+  max_quantity_serial: number;
+}
+
+export interface FixtureRequest {
+  id: number;
+  applicant_name: string;
+  quantity: number;
+  created_at: string;
+  type_code: 'FT' | 'AM' | 'TL';
+  project_code: string;
+  base_number: string;
+  label: string;
+  numbers: string[];
+}
+
+export interface FixtureStatsRow {
+  month: string;
+  type_code: 'FT' | 'AM' | 'TL';
+  applications: number;
+  numbers: number;
+}
+
+export const fixtureAPI = {
+  getKinds: (search = '') => api.get('/fixtures/kinds', { params: { search } }),
+  getRequests: (params: { page?: number; limit?: number; month?: string; type_code?: string; search?: string } = {}) =>
+    api.get('/fixtures/requests', { params }),
+  getStats: () => api.get('/fixtures/stats'),
+  exportCSV: async () => {
+    const token = localStorage.getItem('adminToken');
+    const response = await axios.get('/api/fixtures/export', {
+      responseType: 'blob',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    const url = window.URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fixture_requests_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  },
+  issue: (data: {
+    mode: 'new' | 'existing';
+    applicant_name: string;
+    quantity: number;
+    type_code?: string;
+    project_code?: string;
+    label?: string;
+    base_number?: string;
+    include_quantity?: boolean;
+    omit_type_separator?: boolean;
+    capToken: string;
+  }) => api.post('/fixtures/issue', data),
+};
+
 export const dcpAPI = {
   getTemplateMeta: (type: 'DCP' | 'IMPACT' | 'RISK' | 'VERIFY' | 'IMPLEMENT') => api.get(`/dcp/doc-template?type=${type}`),
   uploadTemplate: (type: 'DCP' | 'IMPACT' | 'RISK' | 'VERIFY' | 'IMPLEMENT', formData: FormData) =>

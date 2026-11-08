@@ -1,6 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const { initializeFixtureSchema } = require('../fixtures/schema');
 
 // 确保数据目录存在
 const dbDir = path.join(__dirname, '..', '..', 'data');
@@ -15,6 +16,7 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('synchronous = NORMAL');
 db.pragma('busy_timeout = 5000');
+initializeFixtureSchema(db);
 
 // 创建项目代号表
 db.exec(`

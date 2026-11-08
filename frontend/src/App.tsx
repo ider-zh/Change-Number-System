@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext';
 import { Home } from './pages/Home';
 import { GuideTenQnA } from './pages/GuideTenQnA';
 import { TechnicalDocumentPage } from './pages/TechnicalDocumentPage';
+import { FixtureNumberPage } from './pages/FixtureNumberPage';
 import { ChangeManagementPage } from './pages/ChangeManagementPage';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
@@ -30,6 +31,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/change-management" element={<ChangeManagementPage />} />
           <Route path="/technical-document" element={<TechnicalDocumentPage />} />
+          <Route path="/fixtures" element={<FixtureNumberPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/guide/ten-qna" element={<GuideTenQnA />} />
           <Route

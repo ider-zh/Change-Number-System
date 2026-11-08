@@ -107,7 +107,7 @@ export function AdminApplicationsPage() {
       };
 
       // 仅展示变更管理相关记录（CR/CN/TD/DCP），排除全部技术文件类型与历史文档
-      apiFilters.exclude_type = 'QTD,DHF,SOP,SOFT,BOM,DRW,HISTORICAL';
+      apiFilters.exclude_type = 'QTD,DHF,SOP,SOFT,BOM,DRW,QST,HISTORICAL';
 
       const res = await applicationAPI.getAll(apiFilters);
       const data = (res as { data: { data: Application[]; pagination: typeof pagination } }).data;

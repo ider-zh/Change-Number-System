@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { ArrowRight } from 'lucide-react';
-import { applicationAPI, contributorAPI, type Application, type Contributor } from '../services';
+import { applicationAPI, contributorAPI, fixtureAPI, type Application, type Contributor, type FixtureStatsRow } from '../services';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { formatBeijingTime } from '@/utils/timezone';
 import { useTour } from '../hooks/useTour';
 import { HOME_STEPS } from '../tour/steps';
 import { ReleaseAnnouncement } from '../components/ReleaseAnnouncement';
+import { FixtureMonthlyStats } from '../components/FixtureMonthlyStats';
 
 const typeColors: { [key: string]: string } = {
   DCP: 'bg-amber-500',
@@ -29,6 +30,7 @@ const techCategories = [
   { code: 'BOM', name: 'BOM（仪器/模块/软件清单）', color: 'bg-amber-500' },
   { code: 'BOM_PCBA', name: 'PCBA', color: 'bg-orange-500' },
   { code: 'OTHER_DRAWING', name: '其他图纸', color: 'bg-slate-500' },
+  { code: 'OTHER_QUALITY_SYSTEM', name: '其他质量体系文件', color: 'bg-teal-500' },
   { code: 'HISTORICAL', name: '历史文档', color: 'bg-slate-400' },
 ];
 
@@ -37,28 +39,35 @@ export function Home() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [fixtureStats, setFixtureStats] = useState<FixtureStatsRow[]>([]);
   
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalRecords, setModalRecords] = useState<Application[]>([]);
   const [contribModalOpen, setContribModalOpen] = useState(false);
-  const [activeStatTab, setActiveStatTab] = useState<'change' | 'tech'>('change');
+  const [activeStatTab, setActiveStatTab] = useState<'change' | 'tech' | 'fixture'>('change');
   const { startTour } = useTour('home', HOME_STEPS);
 
 
   const loadData = async () => {
     try {
-      const res = await applicationAPI.getAll({ limit: 1000 });
-      const responseData = (res as { data: { data: Application[] } }).data;
-      const allApps = responseData?.data || [];
-      // 过滤掉历史导入的数据，不统计到月度统计中
-      const filteredApps = allApps.filter(app => app.applicant_type?.toLowerCase() !== 'imported');
-      setApplications(filteredApps);
-
-      // 加载贡献者数据
-      const contribRes = await contributorAPI.getAll();
-      setContributors((contribRes as { data: Contributor[] }).data || []);
+      const [appResult, fixtureResult, contributorResult] = await Promise.allSettled([
+        applicationAPI.getAll({ limit: 1000 }),
+        fixtureAPI.getStats(),
+        contributorAPI.getAll(),
+      ]);
+      if (appResult.status === 'fulfilled') {
+        const responseData = (appResult.value as { data: { data: Application[] } }).data;
+        const allApps = responseData?.data || [];
+        setApplications(allApps.filter(app => app.applicant_type?.toLowerCase() !== 'imported'));
+      } else console.error('加载申请记录失败', appResult.reason);
+      if (fixtureResult.status === 'fulfilled') {
+        setFixtureStats((fixtureResult.value as { data: FixtureStatsRow[] }).data || []);
+      } else console.error('加载工装统计失败', fixtureResult.reason);
+      if (contributorResult.status === 'fulfilled') {
+        setContributors((contributorResult.value as { data: Contributor[] }).data || []);
+      } else console.error('加载贡献者数据失败', contributorResult.reason);
     } catch (err) {
       console.error('加载数据失败', err);
     } finally {
@@ -126,7 +135,7 @@ export function Home() {
   const techMonthlyData = months.map(month => {
     const dataForMonth = applications.filter(app => {
       if (app.applicant_type?.toLowerCase() === 'imported') return false;
-      const techNumberTypes = ['QTD', 'DHF', 'SOP', 'SOFT', 'BOM', 'DRW', 'HISTORICAL'];
+      const techNumberTypes = ['QTD', 'DHF', 'SOP', 'SOFT', 'BOM', 'DRW', 'QST', 'HISTORICAL'];
       return app.created_at?.startsWith(month) && techNumberTypes.includes(app.number_type);
     });
     const counts: { [key: string]: number } = {};
@@ -167,7 +176,7 @@ export function Home() {
       <div className="max-w-6xl mx-auto p-6 space-y-8">
         <ReleaseAnnouncement />
         <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-6">
             <div data-tour="home-system-title">
               <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">请选择取号入口</p>
               <h1 className="mt-4 text-4xl font-bold text-slate-900">自动取号系统</h1>
@@ -175,7 +184,7 @@ export function Home() {
                 帮助工程师快速获取编号
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2" data-tour="home-entry">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-tour="home-entry">
               <Link
                 to="/change-management"
                 className="group rounded-3xl border border-slate-200 bg-slate-50 p-6 text-left shadow-sm transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl hover:border-[#00AEAA] hover:bg-[#00AEAA] hover:shadow-[#00AEAA]/30"
@@ -210,6 +219,23 @@ export function Home() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-2" />
                 </div>
               </Link>
+              <Link
+                to="/fixtures"
+                className="group rounded-3xl border border-slate-200 bg-slate-50 p-6 text-left shadow-sm transition-all duration-300 ease-out hover:-translate-y-2 hover:scale-[1.02] hover:shadow-xl hover:border-[#00AEAA] hover:bg-[#00AEAA] hover:shadow-[#00AEAA]/30"
+              >
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 transition-colors duration-300 group-hover:text-white/80">工装治具类</p>
+                    <h2 className="mt-2 text-2xl font-bold text-slate-900 transition-colors duration-300 group-hover:text-white">FT/AM/TL</h2>
+                  </div>
+                  <span className="text-3xl transition-transform duration-300 group-hover:scale-125 group-hover:rotate-[6deg] select-none" aria-hidden="true">🧰</span>
+                </div>
+                <p className="text-sm text-slate-600 transition-colors duration-300 group-hover:text-white/90">用于工装治具、辅助物料和工具编号，支持新种类及已有种类取号</p>
+                <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-colors duration-300 group-hover:text-[#EF8641]">
+                  前往工装取号
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-2" />
+                </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -222,7 +248,7 @@ export function Home() {
                 <CardTitle className="text-xl font-bold text-slate-800">月度申请统计</CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">统计最近6个月各类型取号申请数量，点击柱条或顶部数字查看申请明细。</p>
               </div>
-              <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-sm w-fit">
+              <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-sm w-full sm:w-fit">
                 <button
                   onClick={() => setActiveStatTab('change')}
                   className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 select-none ${
@@ -242,6 +268,16 @@ export function Home() {
                   }`}
                 >
                   技术文件统计
+                </button>
+                <button
+                  onClick={() => setActiveStatTab('fixture')}
+                  className={`px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 select-none ${
+                    activeStatTab === 'fixture'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  工装治具统计
                 </button>
               </div>
             </div>
@@ -331,6 +367,8 @@ export function Home() {
                   </div>
                 </div>
               </div>
+            ) : activeStatTab === 'fixture' ? (
+              <FixtureMonthlyStats months={months} stats={fixtureStats} />
             ) : (
               <div>
                 {/* Tech Doc Legend */}
