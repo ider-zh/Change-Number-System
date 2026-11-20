@@ -9,8 +9,8 @@ class FixtureInputError extends Error {
 
 function normalizeProject(value) {
   const firstSegment = typeof value === 'string' ? value.trim().toUpperCase().split('-')[0] : '';
-  if (!/^[A-Z]{2,6}$/.test(firstSegment)) {
-    throw new FixtureInputError('项目代号须以 2–6 位英文字母开头');
+  if (!/^[A-Z0-9]+$/.test(firstSegment)) {
+    throw new FixtureInputError('请选择有效的项目代号');
   }
   return firstSegment;
 }
@@ -22,8 +22,10 @@ function formatSerial(value) {
 function listKinds(db, search = '') {
   const keyword = typeof search === 'string' ? search.trim().toUpperCase().slice(0, 60) : '';
   return db.prepare(`
-    SELECT k.id, k.type_code, k.project_code, k.kind_serial, k.base_number, k.label,
-      COALESCE((SELECT MAX(n.quantity_serial) FROM fixture_numbers n WHERE n.kind_id = k.id), 0) AS max_quantity_serial
+    SELECT k.id, k.type_code, k.project_code, k.kind_serial, k.base_number, k.label, k.created_at,
+      COALESCE((SELECT MAX(n.quantity_serial) FROM fixture_numbers n WHERE n.kind_id = k.id), 0) AS max_quantity_serial,
+      (SELECT COUNT(*) FROM fixture_numbers n WHERE n.kind_id = k.id) AS issued_count,
+      (SELECT COUNT(*) FROM fixture_requests r WHERE r.kind_id = k.id) AS request_count
     FROM fixture_kinds k
     WHERE ? = '' OR k.base_number LIKE ? OR UPPER(k.label) LIKE ?
     ORDER BY k.id DESC LIMIT 100
@@ -38,8 +40,8 @@ function issueNumbers(db, input) {
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > 999) {
     throw new FixtureInputError('申请数量须为 1–999');
   }
-  if (input.mode !== 'new' && input.mode !== 'existing') {
-    throw new FixtureInputError('请选择全新种类或已有种类');
+  if (input.mode !== 'new' && input.mode !== 'existing' && input.mode !== 'replica') {
+    throw new FixtureInputError('请选择全新种类、复刻种类或已有种类');
   }
 
   let typeCode;
@@ -50,17 +52,25 @@ function issueNumbers(db, input) {
   if (input.mode === 'new') {
     typeCode = typeof input.type_code === 'string' ? input.type_code.trim().toUpperCase() : '';
     if (!TYPES.has(typeCode)) throw new FixtureInputError('类型代码须为 FT、AM 或 TL');
-    projectCode = normalizeProject(input.project_code);
+    const selectedProject = typeof input.project_code === 'string' ? input.project_code.trim() : '';
+    if (input.omit_type_separator === true && selectedProject) {
+      throw new FixtureInputError('特殊类别不需要选择项目代号');
+    }
+    projectCode = input.omit_type_separator === true ? '' : normalizeProject(input.project_code);
     label = typeof input.label === 'string' ? input.label.trim() : '';
     if (label.length > 100) throw new FixtureInputError('种类名称不能超过 100 字');
     if (input.include_quantity === false) {
       if (quantity !== 1) throw new FixtureInputError('多套工装必须启用数量流水号');
       includeQuantity = false;
     }
-  } else {
+  }
+  if (input.mode === 'replica' && input.include_quantity === false) {
+    throw new FixtureInputError('复刻种类必须启用数量流水号');
+  }
+  if (input.mode !== 'new') {
     existingBase = typeof input.base_number === 'string' ? input.base_number.trim().toUpperCase() : '';
-    if (!/^(FT|AM|TL)-?[A-Z]{2,6}-\d{2,3}$/.test(existingBase)) {
-      throw new FixtureInputError('请输入系统内已有的种类编号，如 FT-QCI-01');
+    if (!/^(FT|AM|TL)(?:-?[A-Z0-9]+)?-\d{2,3}$/.test(existingBase)) {
+      throw new FixtureInputError('请输入系统内已有的种类编号，如 FT-CM-01 或 TL-02');
     }
   }
 
@@ -73,7 +83,8 @@ function issueNumbers(db, input) {
       `).get(typeCode, projectCode);
       const next = (row.maximum || 0) + 1;
       if (next > 999) throw new FixtureInputError('该类型与项目的种类流水号已用完', 409);
-      const baseNumber = `${typeCode}${input.omit_type_separator === true ? '' : '-'}${projectCode}-${formatSerial(next)}`;
+      const prefix = projectCode ? `${typeCode}-${projectCode}` : typeCode;
+      const baseNumber = `${prefix}-${formatSerial(next)}`;
       const result = db.prepare(`
         INSERT INTO fixture_kinds (type_code, project_code, kind_serial, base_number, label)
         VALUES (?, ?, ?, ?, ?)
@@ -81,7 +92,12 @@ function issueNumbers(db, input) {
       kind = { id: Number(result.lastInsertRowid), base_number: baseNumber, type_code: typeCode, project_code: projectCode, kind_serial: next, label };
     } else {
       kind = db.prepare('SELECT * FROM fixture_kinds WHERE base_number = ?').get(existingBase);
-      if (!kind) throw new FixtureInputError('该种类编号不在系统中，请先申请全新种类', 404);
+      if (!kind) {
+        const message = input.mode === 'replica'
+          ? '未查询到匹配的种类编号，请从“全新种类”界面取号'
+          : '该种类编号不在系统中，请先申请全新种类';
+        throw new FixtureInputError(message, 404);
+      }
     }
 
     const maxRow = db.prepare('SELECT MAX(quantity_serial) AS maximum FROM fixture_numbers WHERE kind_id = ?').get(kind.id);

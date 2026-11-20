@@ -144,7 +144,10 @@ export interface FixtureKind {
   project_code: string;
   base_number: string;
   label: string;
+  created_at: string;
   max_quantity_serial: number;
+  issued_count: number;
+  request_count: number;
 }
 
 export interface FixtureRequest {
@@ -187,7 +190,7 @@ export const fixtureAPI = {
     window.URL.revokeObjectURL(url);
   },
   issue: (data: {
-    mode: 'new' | 'existing';
+    mode: 'new' | 'replica' | 'existing';
     applicant_name: string;
     quantity: number;
     type_code?: string;
